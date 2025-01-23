@@ -104,9 +104,14 @@ GEM
     debug (1.10.0)
       irb (~> 1.10)
       reline (>= 0.3.8)
+    did_you_mean (2.0.0)
     dotenv (3.1.7)
+    dotenv-rails (3.1.7)
+      dotenv (= 3.1.7)
+      railties (>= 6.1)
     drb (2.2.1)
     ed25519 (1.3.0)
+    error_highlight (0.7.0)
     erubi (1.13.1)
     et-orbi (1.2.11)
       tzinfo
@@ -303,6 +308,12 @@ GEM
     stimulus-rails (1.3.4)
       railties (>= 6.0.0)
     stringio (3.1.2)
+    syntax_suggest (2.0.2)
+    tailwindcss-rails (3.3.0)
+      railties (>= 7.0.0)
+      tailwindcss-ruby
+    tailwindcss-ruby (4.0.0-x64-mingw-ucrt)
+    tailwindcss-ruby (4.0.0-x86_64-linux-gnu)
     thor (1.3.2)
     thruster (0.1.10)
     thruster (0.1.10-x86_64-linux)
@@ -343,6 +354,9 @@ DEPENDENCIES
   capybara
   cssbundling-rails
   debug
+  did_you_mean
+  dotenv-rails
+  error_highlight
   jbuilder
   jsbundling-rails
   kamal
@@ -356,6 +370,9 @@ DEPENDENCIES
   solid_cache
   solid_queue
   stimulus-rails
+  syntax_suggest
+  tailwindcss-rails (~> 3.3)
+  tailwindcss-ruby (~> 4.0)
   thruster
   turbo-rails
   tzinfo-data

@@ -44,8 +44,14 @@ gem "thruster", require: false
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
-  gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
+  #gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
 
+  gem "debug", platforms: %i[ mri windows ]
+  gem "dotenv-rails"
+
+  gem "error_highlight"
+  gem "did_you_mean"
+  gem "syntax_suggest"
   # Static analysis for security vulnerabilities [https://brakemanscanner.org/]
   gem "brakeman", require: false
 
@@ -63,3 +69,7 @@ group :test do
   gem "capybara"
   gem "selenium-webdriver"
 end
+
+gem "tailwindcss-ruby", "~> 4.0"
+
+gem "tailwindcss-rails", "~> 3.3"
