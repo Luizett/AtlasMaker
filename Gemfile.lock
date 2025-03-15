@@ -77,6 +77,7 @@ GEM
     ast (2.4.2)
     base64 (0.2.0)
     bcrypt_pbkdf (1.1.1)
+    bcrypt_pbkdf (1.1.1-x64-mingw-ucrt)
     benchmark (0.4.0)
     bigdecimal (3.1.9)
     bindex (0.8.1)
@@ -152,6 +153,9 @@ GEM
       net-smtp
     marcel (1.0.4)
     matrix (0.4.2)
+    mini_magick (5.2.0)
+      benchmark
+      logger
     mini_mime (1.1.5)
     minitest (5.25.5)
     msgpack (1.8.0)
@@ -343,6 +347,7 @@ DEPENDENCIES
   jbuilder
   jsbundling-rails
   kamal
+  mini_magick
   propshaft
   puma (>= 5.0)
   rails (~> 8.0.2)

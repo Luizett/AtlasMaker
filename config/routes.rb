@@ -11,4 +11,11 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   root "home#index"
+
+  get "/atlas" => "atlas#index"
+  # post "/atlas" => "atlas#create"
+  get "images" => "images#index"
+  post "/images" => "images#create"
+  # resources :images, only: :create
+
 end
