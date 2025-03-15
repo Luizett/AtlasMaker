@@ -1,1 +1,22 @@
 @import "tailwindcss";
+
+@theme {
+    --color-russian-violet: #231942;
+    --color-ultra-violet: #5E548E;
+    --color-lavander: #9F86C0;
+    --color-african-violet: #9B7DA8;
+    --color-lilac: #BE95C4;
+    --color-pink: #E0B1CB;
+    --color-eminence: #71388A;
+    --color-amethyst: #9665AB;
+    --color-indigo: #440381;
+
+    --color-english-violet: #55445C;
+    --color-raisin-black: #322A36;
+
+    --color-light-gray: #EBEBEB;
+    --color-timberwolf: #D3D0CB;
+
+    --font-unbounded: "Unbounded", sans-serif;
+    --font-roboto: "Roboto", sans-serif;
+}
