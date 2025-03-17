@@ -2,6 +2,7 @@ import React from 'react';
 import {BrowserRouter as Router, Routes, Route} from "react-router";
 import Home from "./pages/Home";
 import Atlas from "./pages/Atlas";
+import _Header from "./pages/_Header";
 
 const App = () => {
     return (
@@ -9,11 +10,15 @@ const App = () => {
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/images" element={<Atlas />} />
+                <Route path="/abc" element={<_Header /> } />
             </Routes>
         </Router>
     );
 }
 export default App;
+
+
+
 // const click = ()=>{
 //     alert("Hello from React!")
 // }

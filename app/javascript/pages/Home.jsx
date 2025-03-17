@@ -20,7 +20,7 @@ const Home = () => {
                     cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
                     culpa qui officia deserunt mollit anim id est laborum.
                 </p>
-                <Link to="/atlas" className="bg-lilac">START NOW</Link>
+                <Link to="/images" className="bg-lilac">START NOW</Link>
                 <p className="text-timberwolf text-base">
                     or <Link to="/" >Log In</Link> to save your works
                 </p>
