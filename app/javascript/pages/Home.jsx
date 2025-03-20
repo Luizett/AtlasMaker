@@ -5,8 +5,9 @@ import {Link} from "react-router";
 const Home = () => {
     return (
         <>
-            <Header />
+
             <div className="bg-russian-violet min-h-screen flex flex-col align-middle">
+                <Header />
                 <div className="w-4/5 mx-auto">
                     <h1 className="text-white text-5xl font-bold font-unbounded mt-60 w-auto">
                         GENERATE YOUR<br/>
@@ -20,11 +21,11 @@ const Home = () => {
                         nisi ut aliquip ex ea commodo consequat.
                     </p>
 
-                    <Link to="/images"
+                    <Link to="/atlas"
                           className="bg-lilac font-unbounded  text-white tracking-widest font-medium
                                      px-7 py-4 place-self-center justify-self-center
                                       rounded-2xl block
-                                      shadow-pink shadow-button">
+                                      shadow-pink shadow-button-big">
                             START NOW
                     </Link>
 

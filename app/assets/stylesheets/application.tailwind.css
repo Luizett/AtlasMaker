@@ -10,6 +10,7 @@
     --color-eminence: #71388A;
     --color-amethyst: #9665AB;
     --color-indigo: #440381;
+    --color-cherry: #42193F;
 
     --color-english-violet: #55445C;
     --color-raisin-black: #322A36;
@@ -17,9 +18,19 @@
     --color-light-gray: #EBEBEB;
     --color-timberwolf: #D3D0CB;
 
+    --color-reddish: #FF555D;
+
     --font-unbounded: "Unbounded", sans-serif;
     --font-roboto: "Roboto", sans-serif;
 
-    --shadow-button: 0 2px 22px 7px
+    --shadow-button-big: 0 2px 22px 7px;
+    --shadow-button: 0 0 20px 0;
 
+    --border-5: 5px;
+
+    --bg--transparent: none;
+}
+
+.transparentbg {
+    background-image: none;
 }
