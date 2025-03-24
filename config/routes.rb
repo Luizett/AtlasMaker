@@ -12,6 +12,12 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   root "home#index"
 
+  # authentication
+  get "/auth" => "home#index"
+  post "/auth/login" => "authentication#login"
+  post "/auth/new" => "authentication#register"
+
+
   get "/atlas" => "home#index"
   # post "/atlas" => "atlas#create"
   get "images" => "images#index"
