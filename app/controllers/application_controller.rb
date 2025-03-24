@@ -3,17 +3,22 @@ class ApplicationController < ActionController::Base
   allow_browser versions: :modern
   before_action :authenticate_request
 
-  private
+
 
   def authenticate_request
     header = request.headers['Authorization']
     token = header.split(' ').last if header
-    decoded = JwtDecode(token)
-    @current_user = User.find(decoded[:user_id]) if decoded
+    decoded = jwt_decode(token)
+    if decoded
+      # @current_user = User.find(decoded[:user_id])
+      @current_user = User.find_by(user_id: decoded)
+      render json: { user_id: @current_user.id, username: @current_user.username }
+    end
   rescue
-    render json: { error: 'Not Authorized' }, status: :unauthorized
+    render json: { error: 'Not Authorized' }
   end
 
+  private
   SECRET_KEY = Rails.application.credentials.secret_key_base
 
   def jwt_encode(payload)

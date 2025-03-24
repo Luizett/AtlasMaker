@@ -32,7 +32,7 @@ const Home = () => {
 
                     <p className="text-timberwolf text-base text-center mt-10 font-unbounded leading-2 font-light">
                         {"or "}
-                        <Link to="/"
+                        <Link to="/auth"
                             className="font-normal underline">
                             Log In
                         </Link>

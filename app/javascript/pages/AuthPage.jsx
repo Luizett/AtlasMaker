@@ -3,11 +3,16 @@ import Header from "./_Header";
 import Button from "../components/Button";
 import {useNavigate} from "react-router";
 const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+import {sessionEnter} from "../slices/sessionSlice";
+import {useDispatch} from "react-redux";
+
 const AuthPage = () => {
     const [message,setMessage] = useState("");
-    const [formType, setFormType] = useState('register');
+    const [formType, setFormType] = useState('login');
 
     let navigate = useNavigate();
+    const dispatch = useDispatch();
 
     const onRegister = (e) => {
         e.preventDefault();
@@ -56,6 +61,8 @@ const AuthPage = () => {
             .then(data => {
                 console.log(data)
                 if (!data.errors) {
+                    dispatch(sessionEnter(data))
+                    window.localStorage.setItem("token", data.token)
                     navigate("/user")
                 }
                 else {

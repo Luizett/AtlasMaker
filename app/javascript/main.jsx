@@ -1,6 +1,12 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
+import {Provider} from "react-redux";
+import store from "./slices/store";
 
 createRoot(document.getElementById('root'))
-    .render( <App /> )
+    .render(
+        <Provider store={store}>
+            <App />
+        </Provider>
+    )

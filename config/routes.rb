@@ -13,9 +13,12 @@ Rails.application.routes.draw do
   root "home#index"
 
   # authentication
+  get "/session" => "application#authenticate_request"
   get "/auth" => "home#index"
   post "/auth/login" => "authentication#login"
   post "/auth/new" => "authentication#register"
+  patch "user/username" => "authentication#change_username"
+  patch "user/password" => "authentication#change_password"
 
 
   get "/atlas" => "home#index"

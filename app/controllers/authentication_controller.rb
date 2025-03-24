@@ -23,17 +23,28 @@ class AuthenticationController < ApplicationController
     user = User.find_by(username: params[:username])
     if user && user.authenticate(params[:password])
       token = jwt_encode(user_id: user.id)
-      render json: { token: token, user: user }
+      render json: { token: token, user_id: user.id, username: user.username }
     else
       render json: { error: 'Invalid username or password' }
     end
   end
 
-  def logout
-    # TODO
-    # logout когда будет сделано сохранение пользователя внутри хранилища реакт
+  def change_username
+    user = User.find_by(user_id: params[:user_id])
+    if user.update(username: params[:username])
+      render json: { username: user.username }
+    else
+      render json: { errors: user.errors.full_messages }
+    end
+  end
 
-
+  def change_password
+    user = User.find_by(username: params[:username])
+    if user.update(username: params[:username_new])
+      render json: { username: user.username }
+    else
+      render json: { errors: user.errors.full_messages }
+    end
   end
 
   def destroy
