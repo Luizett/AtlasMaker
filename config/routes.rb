@@ -17,8 +17,10 @@ Rails.application.routes.draw do
   get "/auth" => "home#index"
   post "/auth/login" => "authentication#login"
   post "/auth/new" => "authentication#register"
+  # user changing
   patch "user/username" => "authentication#change_username"
   patch "user/password" => "authentication#change_password"
+  delete "user" => "authentication#destroy"
 
 
   get "/atlas" => "home#index"
@@ -27,5 +29,14 @@ Rails.application.routes.draw do
   get "/user" => "home#index"
   post "/images" => "images#create"
   # resources :images, only: :create
+
+  # TODO общий список планов
+  # сделать модель атласа и добавить в неё поля создания редактирования названия и поле для записи uv-координат
+  # приаттачить внутрь изображения чтобы хранить их на сервере
+  # приаттачить атласы к пользователю
+  # добавить функционал созания нового объекта атласа и отображение этих объектов в сетке
+  # добавить открывание атласа в окне по нажатию
+  # добавить приаттачивание нового спрайта к атласу по кнопке и отображение картинок в сетке
+  # удаление атласов и удаление картинок из сетки
 
 end

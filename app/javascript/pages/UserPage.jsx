@@ -7,43 +7,52 @@ import Button from "../components/Button";
 import store from "../slices/store";
 import {useDispatch, useSelector} from "react-redux";
 import {redirect, useNavigate} from "react-router";
-
+import {changeUsername} from "../slices/userSlice";
 import {sessionLeave} from "../slices/sessionSlice";
 import Popup from "../components/Popup";
+import {resetAll} from "../slices/userSlice";
+
+const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
 const UserPage = () => {
-    const {username} = store.getState().session;
-    const [popup, setPopup] = useState("none");
+    const {username, user_id} = store.getState().user;
+
+    const [popup, setPopup] = useState("username");
 
 
     const navigate = useNavigate();
     useEffect(() => {
-        if (!username) {
+        if (!store.getState().session.token) {
             navigate("/auth");
         }
     }, [])
 
     const dispatch = useDispatch();
 
-
     const onExit = () => {
         dispatch(sessionLeave());
+        dispatch(resetAll());
+        window.localStorage.removeItem("token");
         navigate("/");
+    }
+
+    const changePopup = (type) => {
+        setPopup(type)
     }
 
     let popupHTML = null;
     switch (popup) {
-        case 'login':
-            popupHTML = usernamePopup()
+        case 'username':
+            popupHTML = <UsernamePopup setPopup={setPopup} userId={user_id}/>
             break;
         case 'password':
-            popupHTML = passwordPopup()
+            popupHTML = <PasswordPopup setPopup={setPopup} userId={user_id}/>
             break;
         case 'avatar':
-            popupHTML = avatarPopup()
+            popupHTML = <AvatarPopup setPopup={setPopup} userId={user_id}/>
             break;
         case 'delete':
-            popupHTML = deletePopup()
+            popupHTML = <DeletePopup setPopup={setPopup} userId={user_id}/>
             break;
         default:
             popupHTML = null;
@@ -51,62 +60,111 @@ const UserPage = () => {
     }
 
     return (
-        <div className="font-unbounded min-h-screen bg-russian-violet">
+        <>
+            <div className="font-unbounded min-h-screen bg-russian-violet relative">
+
+                <Header/>
+                <Page title="account">
+                    <div className="mt-8">
+                        <img src="/icons/user.png" width={200} height={200}
+                             className="rounded-full bg-timberwolf mx-auto"/>
+                        <div className="absolute bg-pink h-1 w-screen left-0  "></div>
+                        <p style={{width: "fit-content",}}
+                           className=" absolute bg-russian-violet border-pink border-4 text-white text-xl  rounded-full z-10 py-1.5 px-3 -mt-5 mx-auto left-0 right-0">
+                            {username}
+                        </p>
+                    </div>
+
+                    <div className="flex flex-row gap-7 mt-16 justify-center">
+                        <Button type="change" onClick={() => changePopup('username')}>change username</Button>
+                        <Button type="change" onClick={() => setPopup('password')}>change password</Button>
+                        <Button type="change" onClick={() => setPopup('avatar')}>change avatar</Button>
+                        <Button type="change" onClick={onExit}>exit account</Button>
+                        <Button type="change" onClick={() => setPopup('delete')}>delete account</Button>
+                    </div>
+
+                    <div className="mt-24">
+                        <List title="ATLAS "/>
+                    </div>
+
+
+                </Page>
+            </div>
             {popupHTML}
-            <Header/>
-            <Page title="account">
-                <div className="mt-8">
-                    <img src="/icons/user.png" width={200} height={200}
-                         className="rounded-full bg-timberwolf mx-auto"/>
-                    <div className="absolute bg-pink h-1 w-screen left-0  "></div>
-                    <p style={{width: "fit-content",}}
-                       className=" absolute bg-russian-violet border-pink border-4 text-white text-xl  rounded-full z-10 py-1.5 px-3 -mt-5 mx-auto left-0 right-0">
-                        {username}
-                    </p>
-                </div>
-
-                <div className="flex flex-row gap-7 mt-16 justify-center">
-                    <Button type="change" onClick={() => setPopup('login')}>change username</Button>
-                    <Button type="change" onClick={() => setPopup('password')}>change password</Button>
-                    <label>
-                        <input id="avatar" name="avatar" type="file" accept="image/png, image/jpeg" className="hidden"
-                               onChange={() => {/* TODO */}}/>
-                        <Button type="change">change avatar</Button>
-                    </label>
-                    {/*<Button type="change">change avatar</Button>*/}
-                    <Button type="change" onClick={onExit}>exit account</Button>
-                    <Button type="change" onClick={() => setPopup('delete')}>delete account</Button>
-                </div>
-
-                <div className="mt-24">
-                    <List title="ATLAS "/>
-                </div>
-
-
-            </Page>
-        </div>
+        </>
     );
 }
 
-const usernamePopup = (onChange, setPopup) => {
+const UsernamePopup = (props) => {
 
-    const onChangeUsername = () => {
-        fetch("/user/username")
-        setPopup('none')
+    // const [username, setUsername] = useState("")
+    const dispatch = useDispatch();
+    const onChangeUsername = (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target)
+        formData.append('user_id', props.userId);
+        fetch("/user/username", {
+            method: "PATCH",
+            body: formData,
+            headers: {
+                'X-CSRF-Token': csrfToken,
+            }
+
+        }).then(res => res.json())
+          .then(data => {
+              // обновление данных в сторе
+                if (data.errors) {
+                    throw new Error(data.errors)
+                } else {
+                    dispatch(changeUsername(data.username));
+                    e.target.reset();
+                    props.setPopup('none');
+                }
+          })
+            .catch(err => {
+                document.getElementById("loginPopup-error").textContent = err.message
+            })
+
     }
 
     return (
-        <Popup id="loginPopup">
-            <label>New username</label>
-            <input/>
-            <Button type="change" onClick={onChangeUsername}>Change login</Button>
+        <Popup id="loginPopup" closePopup={() => props.setPopup('none')}>
+            <form onSubmit={onChangeUsername} className="flex flex-col text-center">
+                <label htmlFor="username"
+                       className="text-lg font-medium font-unbounded mb-4">
+                    New username
+                </label>
+                <input
+                    name="username"
+                    className="border-2 border-pink font-roboto rounded-md px-3 py-2"
+                />
+                <span id="loginPopup-error" className="text-sm text-reddish font-light place-self-start h-5 pl-2"></span>
+                <div className="mx-auto mt-4">
+                    <Button type="change" btnType="submit">Change username</Button>
+                </div>
+            </form>
         </Popup>
     )
 }
 
-const passwordPopup = (onChange) => {
-
+const PasswordPopup = (onChange) => {
+// todo password popup
     const onChangePassword = () => {
+
+    }
+
+    return (
+        <Popup id="loginPopup">
+        <label>New password</label>
+            <input/>
+            <Button type="change" onClick={onChangePassword}>Change password</Button>
+        </Popup>
+    )
+}
+
+const AvatarPopup = (onChange) => {
+// todo avatar popup
+    const onChangeAvatar = () => {
 
     }
 
@@ -114,37 +172,44 @@ const passwordPopup = (onChange) => {
         <Popup id="loginPopup">
             <label>New password</label>
             <input/>
-            <Button type="change" onClick={onChangePassword}>Change password</Button>
+            <Button type="change" onClick={onChangeAvatar}>Change password</Button>
         </Popup>
     )
 }
 
-const avatarPopup = (onChange) => {
+const DeletePopup = (props) => {
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+// todo delete popup
+    const onDelete = () => {
+        let formData = new FormData();
+        formData.append('user_id', props.userId)
+        fetch("/user", {
+            method: "DELETE",
+            body: formData,
+            headers: {
+                'X-CSRF-Token': csrfToken,
+            }
+        }).then(res => res.json())
+            .then(data => {
+                if (data.errors) {
+                    throw new Error(data.errors)
+                }else {
+                    props.setPopup('none');
+                    dispatch(sessionLeave());
+                    dispatch(resetAll());
+                    window.localStorage.removeItem("token");
+                    navigate("/");
 
-    const onChangePassword = () => {
-
+                }
+            })
+            .catch(err => console.log(err.message))
     }
 
     return (
         <Popup id="loginPopup">
-            <label>New password</label>
-            <input/>
-            <Button type="change" onClick={onChangePassword}>Change password</Button>
-        </Popup>
-    )
-}
-
-const deletePopup = (onChange) => {
-
-    const onChangePassword = () => {
-
-    }
-
-    return (
-        <Popup id="loginPopup">
-            <label>New password</label>
-            <input/>
-            <Button type="change" onClick={onChangePassword}>Change password</Button>
+            <p>Are you sure to delete your account?</p>
+            <Button type="change" onClick={onDelete}>Change password</Button>
         </Popup>
     )
 }

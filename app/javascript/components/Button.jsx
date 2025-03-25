@@ -20,6 +20,7 @@ const Button = (props) => {
         : null;
     return (
          <button className={`${clazz}`}
+                 type={props.btnType? props.btnType : null}
         //<button className="bg-lilac text-md text-cherry rounded-full px-7 py-3 w-[230px] hover:bg-cherry hover:text-reddish hover:inset-shadow-[0px_0px_20px] hover:inset-shadow-reddish"
                 onClick={props.onClick}>
             {icon}

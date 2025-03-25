@@ -20,6 +20,10 @@
 
     --color-reddish: #FF555D;
 
+    --color-overlaying: #00000050;
+    --color-panel: #D3D0CB50;
+
+
     --font-unbounded: "Unbounded", sans-serif;
     --font-roboto: "Roboto", sans-serif;
 

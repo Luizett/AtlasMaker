@@ -6,9 +6,9 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
 import {sessionEnter} from "../slices/sessionSlice";
 import {useDispatch} from "react-redux";
+import {setAll} from "../slices/userSlice";
 
 const AuthPage = () => {
-    const [message,setMessage] = useState("");
     const [formType, setFormType] = useState('login');
 
     let navigate = useNavigate();
@@ -32,12 +32,10 @@ const AuthPage = () => {
                     // TODO
                     // добавить валидацию полей и вывод ошибок в зависимости от типа ошибки
                     // добавить подсказку об успешной решистрации
-
                     setFormType("login")
-
                 }
                 else {
-                    throw new Error("error while fetch register")
+                    throw new Error(data.errors)
                 }
             })
             .catch(error => {
@@ -61,7 +59,12 @@ const AuthPage = () => {
             .then(data => {
                 console.log(data)
                 if (!data.errors) {
-                    dispatch(sessionEnter(data))
+                    dispatch(sessionEnter(data.token))
+                    dispatch(setAll({
+                        user_id: data.user_id,
+                        username: data.username,
+                        avatar: data.avatar_url
+                    }))
                     window.localStorage.setItem("token", data.token)
                     navigate("/user")
                 }
