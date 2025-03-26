@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react";
 import Header from "./_Header";
 import Page from "../components/Page";
-import List from "../components/List";
+import List from "../components/List/List";
 import Button from "../components/Button";
 
 import store from "../slices/store";
@@ -11,6 +11,7 @@ import {changeUsername} from "../slices/userSlice";
 import {sessionLeave} from "../slices/sessionSlice";
 import Popup from "../components/Popup";
 import {resetAll} from "../slices/userSlice";
+import CardAtlas from "../components/List/Cards/CardAtlas";
 
 const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
@@ -76,19 +77,26 @@ const UserPage = () => {
                     </div>
 
                     <div className="flex flex-row gap-7 mt-16 justify-center">
-                        <Button type="change" onClick={() => changePopup('username')}>change username</Button>
-                        <Button type="change" onClick={() => setPopup('password')}>change password</Button>
-                        <Button type="change" onClick={() => setPopup('avatar')}>change avatar</Button>
-                        <Button type="change" onClick={onExit}>exit account</Button>
-                        <Button type="change" onClick={() => setPopup('delete')}>delete account</Button>
+                        <Button type="change" onClick={() => changePopup('username')}>
+                            change username
+                        </Button>
+                        <Button type="change" onClick={() => setPopup('password')}>
+                            change password
+                        </Button>
+                        <Button type="change" onClick={() => setPopup('avatar')}>
+                            change avatar
+                        </Button>
+                        <Button type="change" onClick={onExit}>
+                            exit account
+                        </Button>
+                        <Button type="change" onClick={() => setPopup('delete')}>
+                            delete account
+                        </Button>
                     </div>
 
                     <div className="mt-24">
-                        <List title="ATLAS " />
-                    {/*    TODO реализовать карточки*/}
+                        <List title="ATLAS " btnTitle="+New" cardComponent="atlas"/>
                     </div>
-
-
                 </Page>
             </div>
             {popupHTML}

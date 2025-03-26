@@ -1,35 +1,4 @@
 import React from "react";
-import Button from "./Button";
-
-const List = ({title, btnTitle, cardComponent, cardProps}) => {
-    const activeFilter = 'list';
-    const cards = null;
-
-    return (
-        <>
-            <div className="flex flex-wrap justify-between align-bottom">
-                <h2 className="text-3xl text-pink font-medium pt-2">
-                    {title}
-                    <span className="text-white">
-                        list
-                    </span>
-                </h2>
-                <div className="flex flex-row gap-5 align-middle">
-                    <FilterButton type="list" active={activeFilter}/>
-                    <FilterButton type="gallery" active={activeFilter}/>
-                    <Button type="violet">Add</Button>
-                </div>
-            </div>
-            <div className="absolute bg-pink h-1 w-screen left-0 mt-5 "></div>
-
-            <div className="flex flex-wrap flex-row">
-                {cards}
-            </div>
-        </>
-
-
-    );
-}
 
 const FilterButton = (props) => {
     const style = props.type === props.active ? { filter: "drop-shadow(0px 0px 10px #E0B1CB)" } : null
@@ -64,4 +33,5 @@ const FilterButton = (props) => {
             return null;
     }
 }
-export default List;
+
+export default FilterButton;

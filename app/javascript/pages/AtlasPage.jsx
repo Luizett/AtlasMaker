@@ -2,7 +2,7 @@ import React from "react";
 import Page from "../components/Page";
 import Header from "./_Header";
 import Button from "../components/Button";
-import List from "../components/List";
+import List from "../components/List/List";
 
 
 
