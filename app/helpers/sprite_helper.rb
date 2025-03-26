@@ -1,0 +1,2 @@
+module SpriteHelper
+end

@@ -1,4 +1,31 @@
 Rails.application.routes.draw do
+
+  # Defines the root path route ("/")
+  root "home#index"
+
+  # authentication
+  get "/session" => "application#authenticate_request"
+  get "/auth" => "home#index"
+  post "/auth/login" => "authentication#login"
+  post "/auth/new" => "authentication#register"
+
+  # user
+  get "/user" => "home#index"
+  patch "user/username" => "authentication#change_username"
+  patch "user/password" => "authentication#change_password"
+  delete "user" => "authentication#destroy"
+
+  # atlas
+  get "/atlas" => "home#index"
+  get "/atlases" => "atlas#show_all"
+  post "/atlas" => "atlas#create"
+
+  # sprites
+  # get "images" => "images#index"
+  get "/sprites" => "sprite#show_all"
+  post "/sprite" => "sprite#create"
+  delete "/sprite" => "sprite#delete"
+
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
@@ -9,25 +36,6 @@ Rails.application.routes.draw do
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
-  # Defines the root path route ("/")
-  root "home#index"
-
-  # authentication
-  get "/session" => "application#authenticate_request"
-  get "/auth" => "home#index"
-  post "/auth/login" => "authentication#login"
-  post "/auth/new" => "authentication#register"
-  # user changing
-  patch "user/username" => "authentication#change_username"
-  patch "user/password" => "authentication#change_password"
-  delete "user" => "authentication#destroy"
-
-
-  get "/atlas" => "home#index"
-  # post "/atlas" => "atlas#create"
-  get "images" => "images#index"
-  get "/user" => "home#index"
-  post "/images" => "images#create"
   # resources :images, only: :create
 
   # TODO общий список планов
