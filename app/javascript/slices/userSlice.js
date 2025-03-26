@@ -7,7 +7,7 @@ const initialState = userAdapter.getInitialState({
     username: null,
     avatar: null
 })
-
+// todo добавить внутри редьюсеров соответсвующие запросы к серверу...?
 const userSlice = createSlice({
     name: 'user',
     initialState,

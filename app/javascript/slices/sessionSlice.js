@@ -6,6 +6,8 @@ const initialState = sessionAdapter.getInitialState({
     token: null
 })
 
+
+
 const sessionSlice = createSlice({
     name: 'session',
     initialState,
