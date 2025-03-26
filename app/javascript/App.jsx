@@ -22,7 +22,7 @@ const App = () => {
             fetch("/session", {
                 method: "GET",
                 headers: {
-                    "Authorization": token,
+                    Authorization: `Bearer ${token}`
                 }
             }).then(res => res.json())
               .then(data => {

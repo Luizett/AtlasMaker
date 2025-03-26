@@ -17,7 +17,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 const UserPage = () => {
     const {username, user_id} = store.getState().user;
 
-    const [popup, setPopup] = useState("username");
+    const [popup, setPopup] = useState("none");
 
 
     const navigate = useNavigate();
@@ -84,7 +84,8 @@ const UserPage = () => {
                     </div>
 
                     <div className="mt-24">
-                        <List title="ATLAS "/>
+                        <List title="ATLAS " />
+                    {/*    TODO реализовать карточки*/}
                     </div>
 
 
