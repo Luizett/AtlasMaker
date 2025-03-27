@@ -11,40 +11,44 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
 const ListAtlases = () => {
     const {user_id} = useSelector(state => state.user);
+    const {token} = useSelector(state => state.session);
 
-    const [activeFilter, setActiveFilter] = useState('list');
+    const [activeView, setActiveView] = useState('list');
     const [modal, setModal] = useState(null);
 
     const [cards, setCards] = useState([]);
 
     //fetch cards
     useEffect(() => {
+        console.log("token")
+        console.log(token)
         fetch('/atlases', {
             method: "GET",
-            body: JSON.stringify({
-                user_id: user_id
-            }),
             headers: {
                 'X-CSRF-Token': csrfToken,
+                Authorization: `Bearer ${token}`
             }
         })
             .then(res => res.json())
             .then(data => {
-                if (data.errors) {
+                if (data.atlases) {
+                    setCards(data.atlases)
+                }
+                else {
                     throw new Error(data.errors)
                 }
-                setCards(data.atlases)
+
+
             })
-            .catch(err => console.log(err))
-    }, []);
+            .catch(err => console.log("LIST ATLASES ERROR" + err.message))
+    }, [token]);
 
     const hideModal = () => {
         setModal(null)
     }
 
-
-
     const onAddAtlas = (e) => {
+        e.preventDefault();
         const formData = new FormData(e.target)
         formData.append('user_id', user_id)
         fetch("/atlas", {
@@ -52,6 +56,7 @@ const ListAtlases = () => {
             body: formData,
             headers: {
                 'X-CSRF-Token': csrfToken,
+                Authorization: `Bearer ${token}`
             }
         })
             .then(res => res.json())
@@ -67,7 +72,7 @@ const ListAtlases = () => {
     }
 
 
-    const showModal = () => {
+    const showModal = () =>  {
         setModal(
             <NewAtlasPopup onClose={hideModal} onAddAtlas={onAddAtlas}/>
         );
@@ -76,16 +81,18 @@ const ListAtlases = () => {
     const cardsHTML = cards.map( (atlas) => {
         return (
             <CardAtlas
-                cardType={activeFilter}
+                activeView={activeView}
                 key={atlas.atlas_id} atlasId={atlas.atlas_id}
+                title={atlas.title} updatedAt={atlas.updated_at}
+                atlasImg={atlas.atlas_img} atlasSize={atlas.atlas_size}
             />
         );
     })
 
     return (
         <>
-            <List activeFilter={activeFilter} setActiveFilter={setActiveFilter}
-                  btnTitle="+New" onAddElem={showModal}>
+            <List activeView={activeView} setActiveView={setActiveView}
+                  title="ATLAS " btnTitle="+ New" onAddElem={showModal}>
                 {cardsHTML}
             </List>
             { modal }

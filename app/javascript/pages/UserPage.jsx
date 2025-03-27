@@ -12,18 +12,19 @@ import {sessionLeave} from "../slices/sessionSlice";
 import Popup from "../components/Popup";
 import {resetAll} from "../slices/userSlice";
 import CardAtlas from "../components/List/Cards/CardAtlas";
+import ListAtlases from "../components/List/ListAtlases";
 
 const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
 const UserPage = () => {
-    const {username, user_id} = store.getState().user;
+    const {username, user_id} = useSelector(state => state.user);
+    const {token} = useSelector(state => state.session);
 
     const [popup, setPopup] = useState("none");
 
-
     const navigate = useNavigate();
     useEffect(() => {
-        if (!store.getState().session.token) {
+        if (!token) {
             navigate("/auth");
         }
     }, [])
@@ -95,7 +96,7 @@ const UserPage = () => {
                     </div>
 
                     <div className="mt-24">
-                        <List title="ATLAS " btnTitle="+New" cardComponent="atlas"/>
+                        <ListAtlases />
                     </div>
                 </Page>
             </div>

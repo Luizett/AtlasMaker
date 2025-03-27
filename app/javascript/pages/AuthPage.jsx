@@ -1,18 +1,26 @@
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import Header from "./_Header";
 import Button from "../components/Button";
 import {useNavigate} from "react-router";
 const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
 import {sessionEnter} from "../slices/sessionSlice";
-import {useDispatch} from "react-redux";
+import {useDispatch, useSelector} from "react-redux";
 import {setAll} from "../slices/userSlice";
 
 const AuthPage = () => {
     const [formType, setFormType] = useState('login');
+    const {token} = useSelector(state => state.session);
 
-    let navigate = useNavigate();
+    const navigate = useNavigate();
     const dispatch = useDispatch();
+
+    useEffect(() => {
+        if (token) {
+            console.log("redirect to user")
+            navigate("/user");
+        }
+    }, [])
 
     const onRegister = (e) => {
         e.preventDefault();

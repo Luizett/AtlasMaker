@@ -1,4 +1,7 @@
-class AtlasController < ApplicationController
+class AtlasesController < ApplicationController
+
+  before_action :authenticate_request
+
   def index
 
   end
@@ -12,50 +15,52 @@ class AtlasController < ApplicationController
   # второй алгоритм (гильятина)
 
   def create
-    user = User.find_by_id(params[:user_id])
-    atlas = user.atlas.create(title: params[:title])
+    raise "user not authorized" unless @current_user
 
-    if atlas
-      if atlas.atlas_img.attach(
-        io: File.open(Rails.root.join('public', 'images', 'transparent.png')),
-        filename: 'atlas.png',
-        content_type: 'image/png'
-      )
-        atlas.save
-        render json: {
-          atlas_id: atlas.id,
-          title: params[:title],
-          updated_at: atlas.updated_at,
-          atlas_img: null
-        }
-      else
-        render json: { errors: "Something went wrong while attaching image to atlas"}
+    atlas = @current_user.atlases.create(title: params[:title])
+    raise "Something went wrong while creating new atlas" unless atlas
 
-      end
-    else
-      render json: { errors: "Something went wrong while creating new atlas" }
-    end
 
+    atlas.atlas_img.attach(
+      io: File.open(Rails.root.join('public', 'images', 'empty.png')),
+      filename: atlas.title + '.png',
+      content_type: 'image/png'
+    )
+    raise "Something went wrong while attaching image to atlas" unless atlas.atlas_img.attached?
+
+    atlas.save
+    render json: {
+      atlas_id: atlas.id,
+      title: atlas.title,
+      updated_at: atlas.updated_at.strftime('%d-%m-%Y %H:%M'),
+      atlas_img: atlas.atlas_img.attached? ? url_for(atlas.atlas_img) : nil
+    }
+
+  rescue => err
+    render json: { errors: err.message }
   end
 
   def show_all # todo sort by recent update before send
-    atlases = []
-    if User.find_by_id(params[:user_id]).atlas.each do |atlas|
-      atlases.push({
-                     atlas_id: atlas.id,
-                     title: atlas.title,
-                     updated_at: atlas.updated_at,
-                     atlas_img: url_for(atlas.atlas_img)
+    raise "not authorized" unless @current_user
+    atlasess = []
+    @current_user.atlases.each do |atlas|
+      #size = atlas.atlas_img.metadata.to_s
+      atlasess.push({
+                       atlas_id: atlas.id,
+                       title: atlas.title,
+                       updated_at: atlas.updated_at.strftime('%d-%m-%Y %H:%M'),
+                       atlas_img: atlas.atlas_img.attached? ? url_for(atlas.atlas_img) : nil,
+                       #atlas_size: size
                    })
-      end
-      render json: { atlases: atlases }
-    else
-      render json: { errors: "Something went wrong while trying to find atlas" }
     end
+    raise "atlases empty" unless atlasess
+    render json: { atlases: atlasess }
+  rescue => err
+    render json: { errors: err }
   end
 
   def show
-    atlas = User.find_by_id(params[:user_id]).atlas.find(params[:atlas_id])
+    atlas = User.find_by_id(params[:user_id]).atlases.find(params[:atlas_id])
     if atlas
       render json: {
         atlas_id: atlas.id,
@@ -69,12 +74,21 @@ class AtlasController < ApplicationController
   end
 
   def delete
-    atlas = User.find_by_id(params[:user_id]).atlas.find(params[:atlas_id])
-    if atlas.destroy
+
+    raise "not authorized" unless @current_user
+    raise "no required params" unless params
+    raise "no required params" unless params[:atlas_id]
+
+    atlas = @current_user.atlases.find_by_id(params[:atlas_id])
+    raise "cant find atlas with id " unless atlas
+
+    if atlas && atlas.destroy
       render json: { message: "Atlas successfully deleted." }
     else
       render json: { errors: "Something went wrong while deleting atlas" }
     end
+  rescue => err
+    render json: { errors: err}
   end
 
   # def create

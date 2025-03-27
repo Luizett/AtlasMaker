@@ -2,9 +2,10 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   root "home#index"
+  get "/session" => "application#sessionn"
+
 
   # authentication
-  get "/session" => "application#authenticate_request"
   get "/auth" => "home#index"
   post "/auth/login" => "authentication#login"
   post "/auth/new" => "authentication#register"
@@ -17,8 +18,9 @@ Rails.application.routes.draw do
 
   # atlas
   get "/atlas" => "home#index"
-  get "/atlases" => "atlas#show_all"
-  post "/atlas" => "atlas#create"
+  get "/atlases" => "atlases#show_all"
+  post "/atlas" => "atlases#create"
+  delete "/atlas" => "atlases#delete"
 
   # sprites
   # get "images" => "images#index"
@@ -39,10 +41,9 @@ Rails.application.routes.draw do
   # resources :images, only: :create
 
   # TODO общий список планов
-  # добавить функционал созания нового объекта атласа и отображение этих объектов в сетке
   # добавить открывание атласа в окне по нажатию
   # добавить приаттачивание нового спрайта к атласу по кнопке и отображение картинок в сетке
-  # удаление атласов и удаление картинок из сетки
+  # удаление картинок из сетки
   # создать какой-то файл-сервис чтоб фетчить там всё внутри и просто возвращать функции в конечные файлы
 
 end

@@ -1,7 +1,7 @@
 import React from "react";
 
 import Button from "../Button";
-import FilterButton from "./FilterButton";
+import ListViewButton from "./ListViewButton";
 
 const List = (props) => {
     return (
@@ -14,12 +14,12 @@ const List = (props) => {
                     </span>
                 </h2>
                 <div className="flex flex-row gap-5 align-middle">
-                    <FilterButton type="list"
-                                  active={props.activeFilter}
-                                  onClick={() => props.setActiveFilter('list')}/>
-                    <FilterButton type="gallery"
-                                  active={props.activeFilter}
-                                  onClick={() => props.setActiveFilter('gallery')}/>
+                    <ListViewButton type="list"
+                                    active={props.activeView}
+                                    onClick={() => props.setActiveView('list')}/>
+                    <ListViewButton type="gallery"
+                                    active={props.activeView}
+                                    onClick={() => props.setActiveView('gallery')}/>
                     <Button type="violet" onClick={props.onAddElem}>
                         {props.btnTitle}
                     </Button>
@@ -27,7 +27,12 @@ const List = (props) => {
             </div>
             <div className="absolute bg-pink h-1 w-screen left-0 mt-5 "></div>
 
-            <div className="flex flex-wrap flex-row">
+            {/* todo заменить flex на grid */}
+            <div
+                className={`
+                    flex flex-wrap ${props.activeView === 'list'? "flex-col" : "flex-row"}
+                    gap-6 mt-12
+                `}>
                 { props.children }
             </div>
         </>

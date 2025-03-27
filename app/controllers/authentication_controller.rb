@@ -1,6 +1,6 @@
 class AuthenticationController < ApplicationController
-  skip_before_action :authenticate_request, only: [:register, :login]
-
+  #skip_before_action :authenticate_request, only: [:register, :login]
+  before_action :authenticate_request, only: [:change_password, :change_username, :destroy]
 
   def register
     user = User.new(params.permit(:username, :password))

@@ -11,6 +11,9 @@ import AtlasPage from "./pages/AtlasPage";
 import UserPage from "./pages/UserPage";
 import AuthPage from "./pages/AuthPage";
 
+const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+
 const App = () => {
 
     const dispatch = useDispatch();
@@ -18,14 +21,19 @@ const App = () => {
     // была ли текущая сессия
     useEffect(() => {
         const token = window.localStorage.getItem('token')
+        console.log(token)
         if (token) {
             fetch("/session", {
                 method: "GET",
                 headers: {
+                    'X-CSRF-Token': csrfToken,
                     Authorization: `Bearer ${token}`
                 }
             }).then(res => res.json())
               .then(data => {
+                  if (data.errors) {
+                      throw new Error(data.errors)
+                  }
                   console.log(data)
                   dispatch(sessionEnter(token))
                   dispatch(setAll({
