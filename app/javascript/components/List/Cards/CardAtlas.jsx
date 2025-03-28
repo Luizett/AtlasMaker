@@ -1,22 +1,23 @@
 import React from "react";
 import Button from "../../Button";
 import {useSelector} from "react-redux";
+import {useNavigate} from "react-router";
 const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
 const CardAtlas = ({activeView, atlasId, title, updatedAt, atlasImg, atlasSize}) => {
 
     const {token} = useSelector(state => state.session);
-
+    const navigate = useNavigate();
     const openAtlas = () => {
-        // todo open atlas
+        navigate(`/atlas/${atlasId}`)
     }
 
     const deleteAtlas = () => {
         let formData = new FormData();
         formData.append('atlas_id', atlasId);
-        console.log("start delete atlas id " + atlasId)
-        console.log(token)
-        console.log(csrfToken)
+        // console.log("start delete atlas id " + atlasId)
+        // console.log(token)
+        // console.log(csrfToken)
         fetch('/atlas',{
             method: "DELETE",
             body: formData,
@@ -63,7 +64,7 @@ const CardAtlas = ({activeView, atlasId, title, updatedAt, atlasImg, atlasSize})
         )
         :
         (
-            <div className="flex flex-row rounded-2xl bg-panel justify-between px-8 py-3 text-white">
+            <div className="flex flex-row rounded-2xl bg-panel justify-between px-8 py-3 text-white" onClick={openAtlas}>
                 <div className="flex gap-5">
                     <img className="aspect-square" width={50} height={50} src={atlasImg} alt=""/>
                     <p className="text-nowrap inline my-auto">{title}</p>

@@ -1,9 +1,30 @@
 import React from "react";
+import {useSelector} from "react-redux";
+const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
-const CardImage = ({cardType, title, id, img}) => {
-
+const CardSprite = ({cardType, title, spriteId, spriteImg}) => {
+    const {token} = useSelector(state => state.session);
+    const {atlas_id} = useSelector(state => state.atlas)
     const onDelete = () => {
-
+        let formData = new FormData();
+        formData.append('sprite_id', spriteId);
+        formData.append('atlas_id', atlas_id);
+        fetch("/sprite", {
+            method:"DELETE",
+            body: formData,
+            headers: {
+                'X-CSRF-Token': csrfToken,
+                Authorization: `Bearer ${token}`
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.message)
+            { throw new Error(data.error + data.errors)}
+            else
+            { console.log(data)}
+        })
+        .catch(err => console.log("Error in deleteAtlas: " + err))
     }
 
     return cardType === 'card'?
@@ -16,7 +37,7 @@ const CardImage = ({cardType, title, id, img}) => {
                     backgroundImage: `url(\"/images/transparent.png\")`,
                     backgroundSize: "cover",
                 }}>
-                    <img src={img} alt=""/>
+                    <img src={spriteImg} alt=""/>
                 </div>
                 <button className="bg-cherry rounded-full absolute z-10" onClick={onDelete}>
                     <svg width="34" height="33" viewBox="0 0 34 33" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -35,7 +56,7 @@ const CardImage = ({cardType, title, id, img}) => {
         (
             <div className="flex flex-row rounded-2xl bg-panel justify-between">
                 <div className="flex gap-5">
-                    <img width={50} height={50} src={atlas_img} alt=""/>
+                    <img width={50} height={50} src={spriteImg} alt=""/>
                     <p>{title}</p>
                 </div>
                 <div>
@@ -54,4 +75,4 @@ const CardImage = ({cardType, title, id, img}) => {
         );
 }
 
-export default CardImage
+export default CardSprite

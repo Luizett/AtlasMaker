@@ -17,14 +17,15 @@ Rails.application.routes.draw do
   delete "user" => "authentication#destroy"
 
   # atlas
-  get "/atlas" => "home#index"
+  get "/atlas/:atlas_id" => "home#index"
+  get "atlas/:atlas_id/info" => "atlases#show"
   get "/atlases" => "atlases#show_all"
   post "/atlas" => "atlases#create"
   delete "/atlas" => "atlases#delete"
 
   # sprites
   # get "images" => "images#index"
-  get "/sprites" => "sprite#show_all"
+  get "/atlas/:atlas_id/sprites" => "sprite#show_all"
   post "/sprite" => "sprite#create"
   delete "/sprite" => "sprite#delete"
 
@@ -40,10 +41,5 @@ Rails.application.routes.draw do
 
   # resources :images, only: :create
 
-  # TODO общий список планов
-  # добавить открывание атласа в окне по нажатию
-  # добавить приаттачивание нового спрайта к атласу по кнопке и отображение картинок в сетке
-  # удаление картинок из сетки
-  # создать какой-то файл-сервис чтоб фетчить там всё внутри и просто возвращать функции в конечные файлы
 
 end

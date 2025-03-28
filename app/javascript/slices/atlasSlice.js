@@ -5,8 +5,7 @@ const atlasAdapter = createEntityAdapter();
 const initialState = atlasAdapter.getInitialState({
     atlas_id: null,
     title: null,
-    atlas_img: null,
-    images: []
+    atlas_img: null
 })
 
 const atlasSlice = createSlice({
@@ -17,7 +16,11 @@ const atlasSlice = createSlice({
             state.atlas_id = action.payload.atlas_id
             state.title = action.payload.title
             state.atlas_img = action.payload.atlas_img
-            state.images = action.payload.images
+        },
+        resetAtlas: (state) => {
+            state.atlas_id = null
+            state.title = null
+            state.atlas_img =null
         }
     }
 })
@@ -27,17 +30,6 @@ export default reducer;
 
 export const {
     setAtlas,
+    resetAtlas
 } = actions;
 
-
-// import {createApi, fetchBaseQuery} from '@reduxjs/toolkit/query/react';
-//
-// export const atlasesSlice = createApi({
-//
-//     reducerPath: 'atlases',
-//     baseQuery: fetchBaseQuery({baseUrl: 'http://localhost:3000'}),
-//     tagTypes: ['Atlases'],
-//     endpoints: builder => ({
-//
-//     })
-// })

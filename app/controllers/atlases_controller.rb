@@ -60,17 +60,18 @@ class AtlasesController < ApplicationController
   end
 
   def show
-    atlas = User.find_by_id(params[:user_id]).atlases.find(params[:atlas_id])
-    if atlas
-      render json: {
+    raise "not authorized" unless @current_user
+
+    atlas = @current_user.atlases.find(params[:atlas_id])
+    raise "can't find atlas with id: " + params[:atlas_id] unless atlas
+
+    render json: {
         atlas_id: atlas.id,
         title: atlas.title,
-        coords: atlas.coords,
-        atlas_img: atlas.atlas_img
-      }
-    else
-      render json: { errors: "Can't find atlas" }
-    end
+        atlas_img: url_for(atlas.atlas_img)
+    }
+  rescue => err
+    render json: { errors: "Error in atlases_controller show: " + err.message }
   end
 
   def delete
