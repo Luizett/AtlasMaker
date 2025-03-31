@@ -15,7 +15,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 const ListSprites = () => {
     const {token} = useSelector(state => state.session);
     const {atlas_id} = useSelector(state => state.atlas)
-    const [activeView, setActiveView] = useState('list');
+    const [activeView, setActiveView] = useState('gallery');
     const [modal, setModal] = useState(null);
 
     const [sprites, setSprites] = useState([]);
@@ -69,6 +69,11 @@ const ListSprites = () => {
             .catch(err => console.log("Error in onAddSprite: " + err))
     }
 
+    const onDeleteSprite = (spriteId) => {
+        setSprites(sprites => sprites.filter(sprite => sprite.sprite_id !== spriteId))
+
+    }
+
     // FOR ATLAS REDRAWING AFTER CHANGING SPRITES
     useEffect(() => {
 
@@ -88,6 +93,7 @@ const ListSprites = () => {
                 key={sprite.sprite_id} spriteId={sprite.sprite_id}
                 title={sprite.filename}
                 spriteImg={sprite.sprite_img}
+                onDeleteSprite={onDeleteSprite}
             />
         );
     })
