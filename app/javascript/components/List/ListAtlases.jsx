@@ -16,9 +16,9 @@ const ListAtlases = () => {
     const [activeView, setActiveView] = useState('list');
     const [modal, setModal] = useState(null);
 
-    const [cards, setCards] = useState([]);
+    const [atlases, setAtlases] = useState([]);
 
-    //fetch cards
+    //fetch atlases
     useEffect(() => {
         console.log("token")
         console.log(token)
@@ -32,7 +32,7 @@ const ListAtlases = () => {
             .then(res => res.json())
             .then(data => {
                 if (data.atlases) {
-                    setCards(data.atlases)
+                    setAtlases(data.atlases)
                 }
                 else {
                     throw new Error(data.errors)
@@ -66,11 +66,14 @@ const ListAtlases = () => {
                 }
                 console.log(data)
                 hideModal();
-                setCards(cards => [data, ...cards])
+                setAtlases(atlases => [data, ...atlases])
             })
             .catch(err => console.log(err))
     }
 
+    const onDeleteAtlas = (atlasId) => {
+        setAtlases(atlases => atlases.filter(atlas => atlas.atlas_id !== atlasId))
+    }
 
     const showModal = () =>  {
         setModal(
@@ -78,13 +81,14 @@ const ListAtlases = () => {
         );
     }
 
-    const cardsHTML = cards.map( (atlas) => {
+    const atlasesHTML = atlases.map( (atlas) => {
         return (
             <CardAtlas
                 activeView={activeView}
                 key={atlas.atlas_id} atlasId={atlas.atlas_id}
                 title={atlas.title} updatedAt={atlas.updated_at}
                 atlasImg={atlas.atlas_img} atlasSize={atlas.atlas_size}
+                onDeleteAtlas={onDeleteAtlas}
             />
         );
     })
@@ -93,7 +97,7 @@ const ListAtlases = () => {
         <>
             <List activeView={activeView} setActiveView={setActiveView}
                   title="ATLAS " btnTitle="+ New" onAddElem={showModal}>
-                {cardsHTML}
+                {atlasesHTML}
             </List>
             { modal }
         </>
