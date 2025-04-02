@@ -19,9 +19,10 @@ Rails.application.routes.draw do
   # atlas
   get "/atlas/:atlas_id" => "home#index"
   get "atlas/:atlas_id/info" => "atlases#show"
-  get "/atlases" => "atlases#show_all"
+  get "/atlases" => "atlases#index"
   post "/atlas" => "atlases#create"
   delete "/atlas" => "atlases#delete"
+  put "/atlas" => "atlases#update"
 
   # sprites
   # get "images" => "images#index"

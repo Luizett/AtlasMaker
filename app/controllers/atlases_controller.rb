@@ -1,18 +1,80 @@
+require 'mini_magick'
+
 class AtlasesController < ApplicationController
 
   before_action :authenticate_request
 
-  def index
-
-  end
-
   # TODO создать здесь обработчики событий с атласами: добавление удаление
-  # доюавление\ удаление присоединённого изображения
   # метод генерации изображения атласа по присоединённым изображениям (по вызову)
   # сначала просто склейка изображений подряд как в тестовой пробе
   # затем с использованием алгоритма какого-нибудь (полки)
   # заглушка под второй алгоритм
   # второй алгоритм (гильятина)
+
+  def index # todo sort by recent update before send
+    raise "not authorized" unless @current_user
+    atlasess = []
+    @current_user.atlases.each do |atlas|
+      #size = atlas.atlas_img.metadata.to_s
+      atlasess.push({
+                      atlas_id: atlas.id,
+                      title: atlas.title,
+                      updated_at: atlas.updated_at.strftime('%d-%m-%Y %H:%M'),
+                      atlas_img: atlas.atlas_img.attached? ? url_for(atlas.atlas_img) : nil,
+                      #atlas_size: size
+                    })
+    end
+    raise "atlases empty" unless atlasess
+    render json: { atlases: atlasess }
+  rescue => err
+    render json: { errors: err }
+  end
+
+  def update
+    raise "not authorized" unless @current_user
+    atlas = @current_user.atlases.find_by_id(params[:atlas_id])
+    raise "can't find atlas with id: " + params[:atlas_id] unless atlas
+
+    atlas_url = url_for(atlas.atlas_img)
+
+    atlas_img = MiniMagick::Image.open(atlas_url)
+    atlas_img.colorspace "sRGB"
+    atlas_img.alpha "on"
+    atlas_img.background "none"
+
+    height = atlas_img.height
+    width = atlas_img.width
+
+    atlas.sprites.each do |sprite|
+      sprite_img = MiniMagick::Image.open(url_for(sprite.sprite_img))
+      height = [height, sprite_img.height].max
+      width = width + sprite_img.width
+
+
+      atlas_img.combine_options do |c|
+        c.background "none"
+        c.extent "#{width}x#{height}"
+      end
+
+      atlas_img.colorspace "sRGB"
+      atlas_img.alpha "on"
+
+      atlas_img = atlas_img.composite(sprite_img) do |c|
+            c.compose "Over"
+            c.geometry "+#{width - sprite_img.width}+0"
+            c.alpha "on"
+            c.colorspace "sRGB"
+      end
+    end
+
+
+    atlas.atlas_img.attach(
+      io: File.open(atlas_img.path),
+      filename: atlas.title + ".png",
+      content_type: 'image/png',
+    )
+
+  end
 
   def create
     raise "user not authorized" unless @current_user
@@ -20,6 +82,9 @@ class AtlasesController < ApplicationController
     atlas = @current_user.atlases.create(title: params[:title])
     raise "Something went wrong while creating new atlas" unless atlas
 
+    MiniMagick.convert do |convert|
+      convert.merge! ["-size", "1x1", "canvas:transparent", "PNG32:public/images/empty.png"]
+    end
 
     atlas.atlas_img.attach(
       io: File.open(Rails.root.join('public', 'images', 'empty.png')),
@@ -38,25 +103,6 @@ class AtlasesController < ApplicationController
 
   rescue => err
     render json: { errors: err.message }
-  end
-
-  def show_all # todo sort by recent update before send
-    raise "not authorized" unless @current_user
-    atlasess = []
-    @current_user.atlases.each do |atlas|
-      #size = atlas.atlas_img.metadata.to_s
-      atlasess.push({
-                       atlas_id: atlas.id,
-                       title: atlas.title,
-                       updated_at: atlas.updated_at.strftime('%d-%m-%Y %H:%M'),
-                       atlas_img: atlas.atlas_img.attached? ? url_for(atlas.atlas_img) : nil,
-                       #atlas_size: size
-                   })
-    end
-    raise "atlases empty" unless atlasess
-    render json: { atlases: atlasess }
-  rescue => err
-    render json: { errors: err }
   end
 
   def show

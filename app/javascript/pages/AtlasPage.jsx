@@ -44,6 +44,20 @@ const AtlasPage = () => {
 
     }
 
+    const onAtlasUpdate = () => {
+        const formData = new FormData()
+        formData.append("atlas_id", atlasId)
+        fetch("/atlas", {
+            method: "PUT",
+            body: formData,
+            headers: {
+                'X-CSRF-Token': csrfToken,
+                Authorization: `Bearer ${token}`
+            }
+        }).then(res => res.json())
+            .then(data => console.log(data))
+    }
+
     return (
         <div className="font-unbounded min-h-screen bg-russian-violet">
             <Header />
@@ -69,6 +83,7 @@ const AtlasPage = () => {
                         <img src={atlas_img} alt=""/>
                     </div>
                 </div>
+                <Button type="violet" onClick={onAtlasUpdate}>Update atlas</Button>
                 <div className="mt-8">
                     <ListSprites title="IMAGES "/>
                 </div>
