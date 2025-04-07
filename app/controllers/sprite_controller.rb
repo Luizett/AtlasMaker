@@ -18,7 +18,7 @@ class SpriteController < ApplicationController
     render json: { errors: "Error in show_all: " + err.message }
   end
 
-  def create
+  def create # todo create for inline, bookshelf and skyline atlases
     raise "user not auth " unless @current_user
     atlas = @current_user.atlases.find_by_id(params[:atlas_id])
     raise "can't find atlas with id: " + params[:atlas_id].to_s unless atlas

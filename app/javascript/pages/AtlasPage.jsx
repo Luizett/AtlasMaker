@@ -44,9 +44,10 @@ const AtlasPage = () => {
 
     }
 
-    const onAtlasUpdate = () => {
+    const onAtlasUpdate = (type) => {
         const formData = new FormData()
         formData.append("atlas_id", atlasId)
+        formData.append("type", type)
         fetch("/atlas", {
             method: "PUT",
             body: formData,
@@ -75,15 +76,21 @@ const AtlasPage = () => {
                 </div>
                 <div className="bg-timberwolf rounded-xl border-pink border-dashed border-5 mt-24" >
                     <div className="m-5 aspect-3/1"
-                         // style={{
-                         //     backgroundImage: `url(\"/images/transparent.png\")`,
-                         //     backgroundSize: "cover",
-                         // }}
+                         style={{
+                             backgroundImage: `url(\"/images/transparent.png\")`,
+                             backgroundSize: "cover",
+                         }}
                     >
                         <img src={atlas_img} alt=""/>
                     </div>
                 </div>
-                <Button type="violet" onClick={onAtlasUpdate}>Update atlas</Button>
+                <div>
+                    <Button type="violet" onClick={() => onAtlasUpdate("inline")}>Update Inline</Button>
+                    <Button type="violet" onClick={() => onAtlasUpdate("bookshelf")}>Update Bookshelf</Button>
+                    <Button type="violet" onClick={() => onAtlasUpdate("skyline")}>Update Skyline</Button>
+                {/*    todo красивое меню выбора типа атласа */}
+                </div>
+
                 <div className="mt-8">
                     <ListSprites title="IMAGES "/>
                 </div>
