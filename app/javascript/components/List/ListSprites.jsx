@@ -1,12 +1,11 @@
 
 import React, {useEffect, useState} from "react";
-import store from "../../slices/store";
+import {useDispatch, useSelector} from "react-redux";
+import {updateAtlasImage} from "../../slices/atlasSlice";
+
 import Popup from "../Popup";
 import Button from "../Button";
 import List from "./List";
-import {useSelector} from "react-redux";
-import CardAtlas from "./Cards/CardAtlas";
-import {useParams} from "react-router";
 import CardSprite from "./Cards/CardSprite";
 
 const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
@@ -17,6 +16,7 @@ const ListSprites = () => {
     const {atlas_id} = useSelector(state => state.atlas)
     const [activeView, setActiveView] = useState('gallery');
     const [modal, setModal] = useState(null);
+    const dispatch = useDispatch();
 
     const [sprites, setSprites] = useState([]);
 
@@ -64,7 +64,8 @@ const ListSprites = () => {
                 }
                // console.log(data)
                 hideModal();
-                setSprites(sprites => [ ...sprites, data])
+                dispatch(updateAtlasImage(data.atlas_img))
+                setSprites(sprites => [ ...sprites, data.sprite])
             })
             .catch(err => console.log("Error in onAddSprite: " + err))
     }
