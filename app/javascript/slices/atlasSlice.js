@@ -17,6 +17,9 @@ const atlasSlice = createSlice({
             state.title = action.payload.title
             state.atlas_img = action.payload.atlas_img
         },
+        updateAtlasImage: (state, action) => {
+            state.atlas_img = action.payload
+        },
         resetAtlas: (state) => {
             state.atlas_id = null
             state.title = null
@@ -30,6 +33,7 @@ export default reducer;
 
 export const {
     setAtlas,
+    updateAtlasImage,
     resetAtlas
 } = actions;
 

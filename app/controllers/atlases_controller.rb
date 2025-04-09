@@ -219,8 +219,7 @@ class AtlasesController < ApplicationController
 
     @atlas.coords = { type: "inline", coords: coords }
     @atlas.save
-
-    render json: { message: "Atlas successfully updated.", atlas_img: atlas_img.path }
+    render json: { message: "Atlas successfully updated.", atlas_img: url_for(@atlas.atlas_img) }
 
 
   rescue => err
@@ -261,7 +260,7 @@ class AtlasesController < ApplicationController
       # try to find shelf
       shelf = nil
       shelves.each do |sh|
-        if sh[:height] > sprite_height && sprite_height.to_f/sh[:height] > 0.7
+        if sh[:height] >= sprite_height && sprite_height.to_f/sh[:height] > 0.7
           shelf = sh
           break
         end
@@ -348,8 +347,7 @@ class AtlasesController < ApplicationController
 
     @atlas.coords = { type: "bookshelf", coords: coords, shelves: shelves }
     @atlas.save
-
-    render json: { message: "Atlas successfully updated.", atlas_img: atlas_img.path }
+    render json: { message: "Atlas successfully updated.", atlas_img: url_for(@atlas.atlas_img) }
 
   rescue => err
     render json: { error: "error in update_bookshelf: " + err.message }
