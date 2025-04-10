@@ -65,7 +65,7 @@ class SpriteController < ApplicationController
     @sprite = @atlas.sprites.find_by_id(params[:sprite_id])
     raise "can't find sprite with id: " + params[:sprite_id].to_s unless @sprite
 
-    case @atlas.coords[:type]
+    case @atlas.coords["type"]
     when 'inline'
       delete_inline
     when 'bookshelf'
@@ -73,11 +73,11 @@ class SpriteController < ApplicationController
     when 'skyline'
       delete_skyline
     else
-      raise "Unexpected atlas type: " + @atlas.coords.type
+      raise "Unexpected atlas type: " + @atlas.coords["type"]
     end
 
     if @sprite.destroy
-      render json: {message: 'sprite successfully deleted', atlas_img: url_for(@atlas.atlas_img)}
+      render json: { message: 'sprite successfully deleted', atlas_img: url_for(@atlas.atlas_img) }
     else
       raise "Something went wrong while deleting sprite"
     end
@@ -133,27 +133,111 @@ private
 
     @atlas.coords = { type: "inline", coords: coords }
     @atlas.save
-
-
   end
 
   def create_bookshelf
 
-
-  rescue => err
-    render json: { error: "Error in create_bookshelf in sprite_controller: " + err.message }
   end
 
   def create_skyline
-  rescue => err
-    render json: { error: "Error in create_skyline in sprite_controller: " + err.message }
   end
 
   # DELETE
 
   def delete_inline
-  rescue => err
-    render json: { error: "Error in delete_inline in sprite_controller: " + err.message }
+
+    atlas_img = MiniMagick::Image.open(url_for(@atlas.atlas_img))
+    atlas_width = atlas_img.width
+    atlas_height = atlas_img.height
+
+    coords = @atlas.coords["coords"]
+    coord_ind = coords.find_index { |sprite| sprite["id"] == @sprite.id }
+    raise "can't find coord with id: " + @sprite.id unless coord_ind
+
+    coord = coords[coord_ind]
+
+    # проверка что картинка не первая и не последняя
+    if coord_ind == 0
+      # оставить только правую часть
+      next_coord = coords[coord_ind + 1]
+      atlas_img.combine_options do |c|
+        c.extent "#{atlas_width - next_coord["start_width"]}x#{atlas_height}+#{next_coord["start_width"]}+0"
+        c.background "none"
+        c.colorspace "sRGB"
+        c.alpha "on"
+      end
+
+    elsif coord_ind == coords.size - 1
+      # оставить только левую часть
+      atlas_img.combine_options do |c|
+        c.extent "#{atlas_width - coord["width"]}x#{atlas_height}"
+        c.background "none"
+        c.colorspace "sRGB"
+        c.alpha "on"
+      end
+    else
+      next_coord = coords[coord_ind + 1]
+
+      right_part = MiniMagick::Image.open(url_for(@atlas.atlas_img))
+      right_part.combine_options do |c|
+        c.extent "#{atlas_width - next_coord["start_width"]}x#{atlas_height}+#{next_coord["start_width"]}+0"
+        c.background "none"
+        c.colorspace "sRGB"
+        c.alpha "on"
+      end
+
+      # оставить только левую часть атласа и подогнать атлас под новый размер
+      atlas_img.combine_options do |c|
+            c.extent "#{coord["start_width"]}x#{atlas_height}"
+            c.background "none"
+            c.colorspace "sRGB"
+            c.alpha "on"
+            c.extent "#{atlas_width - coord["width"]}x#{atlas_height}"
+      end
+
+      # вставить правую часть
+      atlas_img = atlas_img.composite(right_part) do |c|
+            c.compose "Over"
+            c.geometry "+#{coord["start_width"]}+0"
+            c.alpha "on"
+            c.colorspace "sRGB"
+      end
+
+    end
+
+    # смещение координат в массиве
+    (coord_ind+1...coords.size).each do |i|
+      coords[i]["start_width"] -= coord["width"]
+    end
+
+    coords.delete_at(coord_ind)
+
+    if coord["height"] == atlas_img.height
+      # ищем новую высоту атласа
+      new_height = 0
+      atlas_width = atlas_img.width
+
+      coords.each do |c|
+        new_height = [c["height"], new_height].max
+      end
+
+      atlas_img.combine_options do |c|
+        c.extent "#{atlas_width}x#{new_height}"
+        c.background "none"
+        c.colorspace "sRGB"
+        c.alpha "on"
+      end
+    end
+
+    @atlas.atlas_img.attach(
+      io: File.open(atlas_img.path),
+      filename: @atlas.title + ".png",
+      content_type: 'image/png'
+    )
+
+    @atlas.coords = { type: "inline", coords: coords }
+    @atlas.save
+
   end
 
   def delete_bookshelf

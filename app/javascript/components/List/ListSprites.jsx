@@ -71,14 +71,31 @@ const ListSprites = () => {
     }
 
     const onDeleteSprite = (spriteId) => {
-        setSprites(sprites => sprites.filter(sprite => sprite.sprite_id !== spriteId))
-
+        let formData = new FormData();
+        formData.append('sprite_id', spriteId);
+        formData.append('atlas_id', atlas_id);
+        fetch("/sprite", {
+            method:"DELETE",
+            body: formData,
+            headers: {
+                'X-CSRF-Token': csrfToken,
+                Authorization: `Bearer ${token}`
+            }
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.message)
+                { throw new Error(data.error + data.errors)}
+                else
+                {
+                    dispatch(updateAtlasImage(data.atlas_img))
+                    setSprites(sprites => sprites.filter(sprite => sprite.sprite_id !== spriteId))
+                    // onDeleteSprite(spriteId)
+                    console.log(data)
+                }
+            })
+            .catch(err => console.log("Error in deleteAtlas: " + err))
     }
-
-    // FOR ATLAS REDRAWING AFTER CHANGING SPRITES
-    useEffect(() => {
-
-    }, [sprites]);
 
 
     const showModal = () =>  {
