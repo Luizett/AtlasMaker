@@ -334,8 +334,372 @@ private
   end
 
   def delete_bookshelf
-  rescue => err
-    render json: { error: "Error in delete_bookshelf in sprite_controller: " + err.message }
+
+    shelves = @atlas.coords["shelves"]
+    coords = @atlas.coords["coords"]
+
+    atlas_img = MiniMagick::Image.open(url_for(@atlas.atlas_img))
+    atlas_width = atlas_img.width
+    atlas_height = atlas_img.height
+
+    coord_ind = coords.find_index { |sprite| sprite["id"] == @sprite.id }
+    raise "can't find coord with id: " + @sprite.id unless coord_ind
+    coord = coords[coord_ind]
+
+    shelf = shelves.find { |sh| sh["start_height"] == coord["start_height"] }
+    raise "can't find shelf with start_height: " + coord["start_height"] unless shelf
+    next_shelf_start = shelf["start_height"]+shelf["height"]
+
+
+    upper_shelves_w = atlas_width
+    upper_shelves_h = coord["start_height"]
+    if upper_shelves_w != 0 && upper_shelves_h != 0
+      upper_shelves = MiniMagick::Image.open(url_for(@atlas.atlas_img))
+      upper_shelves = upper_shelves.combine_options do |c|
+        c.extent "#{upper_shelves_w}x#{upper_shelves_h}"
+        c.background "none"
+        c.colorspace "sRGB"
+        c.alpha "on"
+      end
+    end
+
+    lower_shelves_w = atlas_width
+    lower_shelves_h = atlas_height - next_shelf_start
+    if lower_shelves_w != 0 && lower_shelves_h != 0
+      lower_shelves = MiniMagick::Image.open(url_for(@atlas.atlas_img))
+      lower_shelves = lower_shelves.combine_options do |c|
+        c.extent "#{lower_shelves_w}x#{lower_shelves_h}+0+#{next_shelf_start}"
+        c.background "none"
+        c.colorspace "sRGB"
+        c.alpha "on"
+      end
+    end
+    # lower_shelves = MiniMagick::Image.open(url_for(@atlas.atlas_img))
+    # #lower_shelves = atlas_img.extent("#{atlas_width}x#{atlas_height - next_shelf_start}+0+#{next_shelf_start}")
+    # lower_shelves = lower_shelves.combine_options do |c|
+    #   c.extent "#{atlas_width}x#{atlas_height - next_shelf_start}+0+#{next_shelf_start}"
+    #   c.background "none"
+    #   c.colorspace "sRGB"
+    #   c.alpha "on"
+    # end
+    # lower_shelves_h = lower_shelves.height
+    # lower_shelves_w = lower_shelves.width
+
+    shelf_left_part_w = coord["start_width"]
+    shelf_left_part_h = shelf["height"]
+    if shelf_left_part_w != 0 && shelf_left_part_h != 0
+      shelf_left_part = MiniMagick::Image.open(url_for(@atlas.atlas_img))
+      shelf_left_part = shelf_left_part.combine_options do |c|
+        c.extent "#{shelf_left_part_w}x#{shelf_left_part_h}+0+#{shelf["start_height"]}"
+        c.background "none"
+        c.colorspace "sRGB"
+        c.alpha "on"
+      end
+    end
+
+    # if coord["start_width"] != 0 && shelf["height"] != 0
+    #   shelf_left_part = MiniMagick::Image.open(url_for(@atlas.atlas_img))
+    #   shelf_left_part = shelf_left_part.combine_options do |c|
+    #     c.extent "#{coord["start_width"]}x#{shelf["height"]}+0+#{shelf["start_height"]}"
+    #     c.background "none"
+    #     c.colorspace "sRGB"
+    #     c.alpha "on"
+    #     end
+    #   shelf_left_part_h = shelf_left_part.height
+    #   shelf_left_part_w = shelf_left_part.width
+    # end
+    #    shelf_left_part = atlas_img.extent("#{coord["start_width"]}x#{shelf["height"]}+0+#{shelf["start_height"]}")
+
+    # shelf_right_part = MiniMagick::Image.open(url_for(@atlas.atlas_img))
+    # shelf_right_part = shelf_right_part.combine_options do |c|
+    #   c.extent "#{shelf["width"] - (coord["start_width"] + coord["width"])}x#{shelf["height"]}+#{coord["start_width"] + coord["width"]}+#{shelf["start_height"]}"
+    #   c.background "none"
+    #   c.colorspace "sRGB"
+    #   c.alpha "on"
+    # end
+    # #shelf_right_part = atlas_img.extent("#{shelf["width"] - (coord["start_width"] + coord["width"])}x#{shelf["height"]}+#{coord["start_width"] + coord["width"]}+#{shelf["start_height"]}")
+    # shelf_right_part_h = shelf_right_part.height
+    # shelf_right_part_w = shelf_right_part.width
+
+    shelf_right_part_w = shelf["width"] - (coord["start_width"] + coord["width"])
+    shelf_right_part_h = shelf["height"]
+    if shelf_right_part_w != 0 && shelf_right_part_h != 0
+      shelf_right_part = MiniMagick::Image.open(url_for(@atlas.atlas_img))
+      shelf_right_part = shelf_right_part.combine_options do |c|
+        c.extent "#{shelf_right_part_w}x#{shelf_right_part_h}+#{coord["start_width"] + coord["width"]}+#{shelf["start_height"]}"
+        c.background "none"
+        c.colorspace "sRGB"
+        c.alpha "on"
+      end
+    end
+
+
+    atlas_img.combine_options do |c|
+      c.extent "#{1}x#{1}"
+      c.background "none"
+      c.colorspace "sRGB"
+      c.alpha "on"
+    end
+
+    shelf["width"] -= coord["width"]
+
+    if shelf["width"] + coord["width"] == atlas_width
+      atlas_width = shelves.map{ |s| s["width"] }.max
+    end
+
+    if shelf["width"] == 0
+      atlas_height -= shelf["height"]
+      next_shelf_start -= shelf["height"]
+      # смещение координат и полок
+      coords.each do |c|
+        c["start_height"] -= shelf["height"] if c["start_height"] > shelf["start_height"]
+      end
+      shelves.each do |s|
+        s["start_height"] -= shelf["height"] if s["start_height"] > shelf["start_height"]
+      end
+
+    else
+      (coord_ind+1...coords.size).each do |i|
+        if coords[i]["start_height"] == shelf["start_height"]
+          coords[i]["start_width"] -= coord["width"]
+        end
+      end
+    end
+
+    atlas_img.combine_options do |c|
+      c.extent "#{atlas_width}x#{atlas_height}"
+      c.background "none"
+      c.colorspace "sRGB"
+      c.alpha "on"
+    end
+    atlas_width = atlas_img.width
+    atlas_height = atlas_img.height
+
+    atlas_img = atlas_img.composite(upper_shelves) do |c|
+      c.compose "Over"
+      c.geometry "+0+0"
+      c.alpha "on"
+      c.colorspace "sRGB"
+    end if upper_shelves
+
+    atlas_img = atlas_img.composite(shelf_left_part) do |c|
+      c.compose "Over"
+      c.geometry "+0+#{coord["start_height"]}"
+      c.alpha "on"
+      c.colorspace "sRGB"
+    end if shelf_left_part
+
+    atlas_img = atlas_img.composite(shelf_right_part) do |c|
+      c.compose "Over"
+      c.geometry "+#{coord["start_width"]}+#{coord["start_height"]}"
+      c.alpha "on"
+      c.colorspace "sRGB"
+    end if shelf_right_part
+
+    atlas_img = atlas_img.composite(lower_shelves) do |c|
+      c.compose "Over"
+      c.geometry "+0+#{next_shelf_start}"
+      c.alpha "on"
+      c.colorspace "sRGB"
+    end if lower_shelves
+
+    atlas_height = atlas_img.height
+    atlas_width = atlas_img.width
+
+    shelves.delete(shelf) if shelf["width"] == 0
+    coords.delete_at(coord_ind)
+
+    # atlas_img = MiniMagick::Image.new(upper_shelves) do |img|
+    #   img << shelf_full.path
+    #   img << lower_shelves.path
+    #   img.append
+    # end
+
+
+    # shelf_full = MiniMagick.convert do |c|
+    #   c << shelf_left_part.path
+    #   c.append.+
+    #   c << shelf_right_part.path
+    #   c.call
+    # end
+    #
+    #
+    #
+    #
+    # coords.delete_at(coord_ind)
+    #
+    # shelf_full_height = shelf_full.height
+    # if shelf_full.width == 0
+    #   shelf_full_height = 0
+    # else
+    #   #change height of shelf
+    #   if shelf_full_height == coord["height"]
+    #     shelf_full_height = 0
+    #     coords.each do |c|
+    #       if c["start_height"] == shelf["start_height"] && c["height"] > shelf_full_height
+    #         shelf_full_height = c["height"]
+    #       end
+    #     end
+    #     if shelf_full_height == 0
+    #       shelves.delete(shelf)
+    #     end
+    #   end
+    # end
+    #
+    # shelf_full.combine_options do |c|
+    #     c.extent "#{atlas_width}x#{shelf_full_height}"
+    #     c.background "none"
+    #     c.colorspace "sRGB"
+    #     c.alpha "on"
+    # end
+    #
+    # atlas_img = MiniMagick::Tool::Convert.new do |c|
+    #   c << upper_shelves.path
+    #   c << shelf_full.path
+    #   c << lower_shelves.path
+    #   c << "append"
+    #   c.call
+    # end
+    #
+    # shelf["width"] -= coord["width"]
+
+    # coords change
+
+    @atlas.atlas_img.attach(
+      io: File.open(atlas_img.path),
+      filename: @atlas.title + ".png",
+      content_type: 'image/png'
+    )
+
+    @atlas.coords = { type: "bookshelf", coords: coords, shelves: shelves }
+    @atlas.save
+
+    # raise 'my error!'
+
+    # # взять полку справа от удаляемого
+    # shelf_right_part = MiniMagick::Image.open(url_for(@atlas.atlas_img))
+    # shelf_right_part_start = coord["start_width"] + coord["width"]
+    # shelf_right_part.combine_options do |c|
+    #   c.extent "#{shelf["width"] - shelf_right_part_start}x#{shelf["height"]}+#{shelf_right_part_start}+#{shelf["start_height"]}"
+    #   c.background "none"
+    #   c.colorspace "sRGB"
+    #   c.alpha "on"
+    # end
+    #
+    # x1 = coord["start_width"]
+    # y1 = coord["start_height"]
+    # x2 = shelf["width"]     # ширина области = конечная X - начальная X
+    # y2 = y1 + shelf["height"]
+    # # закрасить область полки начиная с удаляемого пустотой
+    # atlas_img.combine_options do |c|
+    #   c.background "none"
+    #   c.colorspace "sRGB"
+    #   c.alpha "on"
+    #   c.fill "none"
+    #   c.draw "rectangle #{x1},#{y1} #{x2},#{y2}"
+    # end
+    #
+    # atlas_img.write "./atlas_img.png"
+    #
+    # @atlas.atlas_img.attach(
+    #   io: File.open(atlas_img.path),
+    #   filename: @atlas.title + ".png",
+    #   content_type: 'image/png'
+    # )
+
+    #
+    #
+    # # вставить на это место правую часть полки
+    # atlas_img = atlas_img.composite(shelf_right_part) do |c|
+    #   c.compose "Over"
+    #   c.geometry "+#{coord["start_width"]}+#{coord["start_height"]}"
+    #   c.alpha "on"
+    #   c.colorspace "sRGB"
+    # end
+    #
+    # shelf["width"] -= coord["width"]
+    #
+    # # настройка актуальной ширины атласа
+    # if shelf["width"] + coord["width"] == atlas_width
+    #   atlas_width = shelves.map{ |s| s["width"] }.max
+    #   atlas_img.combine_options do |c|
+    #     c.extent "#{atlas_width}x#{atlas_height}"
+    #     c.background "none"
+    #     c.colorspace "sRGB"
+    #     c.alpha "on"
+    #   end
+    # end
+    #
+    # if shelf["width"] == 0
+    #   # полка пуста, надо удалить её из массива, сдвинуть остальные полки и изменить размер атласа
+    #
+    #   # то что было под полкой
+    #   shelf_lowers = MiniMagick::Image.open(url_for(@atlas.atlas_img))
+    #   shelf_lowers_start_height = shelf["start_height"] + shelf["height"]
+    #   shelf_lowers = shelf_lowers.combine_options do |c|
+    #     c.extent "#{atlas_width}x#{atlas_height - shelf_lowers_start_height}+0+#{shelf_lowers_start_height}"
+    #     c.background "none"
+    #     c.colorspace "sRGB"
+    #     c.alpha "on"
+    #   end
+    #
+    #   h = shelf_lowers.height
+    #   w = shelf_lowers.width
+    #
+    #   # то что было над полкой + свободное пространство
+    #   atlas_img.combine_options do |c|
+    #     c.extent "#{atlas_width}x#{shelf["start_height"]}+0+0"
+    #     c.background "none"
+    #     c.colorspace "sRGB"
+    #     c.alpha "on"
+    #   end
+    #
+    #   atlas_height -= shelf["height"]
+    #   atlas_img.combine_options do |c|
+    #     c.background "none"
+    #     c.colorspace "sRGB"
+    #     c.alpha "on"
+    #     c.extent "#{atlas_width}x#{atlas_height}+0+0"
+    #   end
+    #
+    #   atlas_width = atlas_img.width
+    #   atlas_height = atlas_img.height
+    #
+    #   atlas_img = atlas_img.composite(shelf_lowers) do |c|
+    #     c.compose "Over"
+    #     c.geometry "+#0+#{shelf["start_height"]}"
+    #     c.alpha "on"
+    #     c.colorspace "sRGB"
+    #   end
+    #   atlas_width = atlas_img.width
+    #   atlas_height = atlas_img.height
+    #   shelves.delete(shelf)
+    # else
+    #   # если полка не пуста надо переназначит координаты каринок на ней
+    #   (coord_ind+1...coords.size).each do |i|
+    #     if coords[i]["start_height"] == shelf["start_height"]
+    #       coords[i]["start_width"] -= coord["width"]
+    #     end
+    #   end
+    #
+    # end
+    #
+    # coords.delete_at(coord_ind)
+    #
+    # # взять полку справа от удаляемого
+    # # закрасить область полки начиная с удаляемого пустотой
+    # # вставить на это место часть полки
+    # # удалить полку если полка пуста
+    # # изменить размер атласа если надо
+    #
+    # @atlas.atlas_img.attach(
+    #   io: File.open(atlas_img.path),
+    #   filename: @atlas.title + ".png",
+    #   content_type: 'image/png'
+    # )
+    #
+    # @atlas.coords = { type: "bookshelf", coords: coords, shelves: shelves }
+    # @atlas.save
   end
 
   def delete_skyline
