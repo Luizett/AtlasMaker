@@ -72,7 +72,7 @@ const AtlasPage = () => {
                     setLoading(false)
                 }
             })
-            .catch(err => console.log(err))
+            .catch(err => console.log(err.error + err.errors))
     }
 
     return (
