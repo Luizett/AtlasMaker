@@ -1,76 +1,50 @@
 import React, {useEffect, useState} from "react";
+import {useParams} from "react-router";
+import {useDispatch, useSelector} from "react-redux";
+import {setAtlas, updateAtlasImage} from "../slices/atlasSlice";
+
 import Page from "../components/Page";
 import Header from "./_Header";
 import Button from "../components/Button";
-import {useParams} from "react-router";
 import ListSprites from "../components/List/ListSprites";
-import {useDispatch, useSelector} from "react-redux";
-import {setAtlas, updateAtlasImage} from "../slices/atlasSlice";
-import CardSprite from "../components/List/Cards/CardSprite";
 import Spinner from "../components/Spinner";
-
-const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-
+import useFetch from "../services/useFetch";
 
 const AtlasPage = () => {
-    const {token} = useSelector(state => state.session);
-    const dispatch = useDispatch();
-
-    const [loading, setLoading] = useState(false)
-
     const atlasId = useParams().atlas_id
     const { atlas_id, title, atlas_img } = useSelector(state => state.atlas)
+    const [loading, setLoading] = useState(false)
+
+    const dispatch = useDispatch();
+    const {request} = useFetch()
 
     useEffect(() => {
-        fetch(`/atlas/${atlasId}/info`, {
-            method: "GET",
-            headers: {
-                'X-CSRF-Token': csrfToken,
-                Authorization: `Bearer ${token}`
-            }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.errors || data.error) {
-                throw new Error(data)
-            }
-            dispatch(setAtlas({
-                atlas_id: data.atlas_id,
-                title: data.title,
-                atlas_img: data.atlas_img
-            }))
-        })
-        .catch(err => console.log("Error in AtlasPage: " + err.error + err.errors))
+        request(`/atlas/${atlasId}/info`, "GET")
+            .then(data => {
+                dispatch(setAtlas({
+                    atlas_id: data.atlas_id,
+                    title: data.title,
+                    atlas_img: data.atlas_img
+                }))
+            })
+            .catch(err => console.log("Error in AtlasPage: " + err.error + err.errors))
     }, []);
 
     const onAtlasTitleChange = () => {
-
+// todo atlas title change
     }
 
     const onAtlasUpdate = (type) => {
         setLoading(true)
-        const formData = new FormData()
-        formData.append("atlas_id", atlasId)
-        formData.append("type", type)
-        fetch("/atlas", {
-            method: "PUT",
-            body: formData,
 
-            headers: {
-                'X-CSRF-Token': csrfToken,
-                Authorization: `Bearer ${token}`
-            }
-        })
-            .then(res => res.json())
+        let requestBody = new FormData()
+        requestBody.append("atlas_id", atlasId)
+        requestBody.append("type", type)
+
+        request("/atlas", "PUT", requestBody)
             .then(data => {
-                if (data.error || data.errors) {
-                    throw new Error(data)
-                } else
-                {
-                    dispatch(updateAtlasImage(data.atlas_img))
-
-                    setLoading(false)
-                }
+                dispatch(updateAtlasImage(data.atlas_img))
+                setLoading(false)
             })
             .catch(err => console.log(err.error + err.errors))
     }
@@ -102,7 +76,6 @@ const AtlasPage = () => {
                             :
                             <img src={atlas_img} alt=""/>
                         }
-
                     </div>
                 </div>
                 <div>
@@ -121,5 +94,4 @@ const AtlasPage = () => {
 
 }
 
-export default AtlasPage
-
+export default AtlasPage;

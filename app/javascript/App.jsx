@@ -6,7 +6,6 @@ import {setAll} from "./slices/userSlice";
 
 import {BrowserRouter as Router, Routes, Route} from "react-router";
 import Home from "./pages/Home";
-import Atlas from "./pages/Atlas";
 import AtlasPage from "./pages/AtlasPage";
 import UserPage from "./pages/UserPage";
 import AuthPage from "./pages/AuthPage";

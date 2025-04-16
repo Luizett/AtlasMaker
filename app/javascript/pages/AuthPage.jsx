@@ -1,12 +1,13 @@
 import React, {useEffect, useState} from "react";
-import Header from "./_Header";
-import Button from "../components/Button";
 import {useNavigate} from "react-router";
-const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+import useFetch from "../services/useFetch";
 
 import {sessionEnter} from "../slices/sessionSlice";
 import {useDispatch, useSelector} from "react-redux";
 import {setAll} from "../slices/userSlice";
+
+import Header from "./_Header";
+import Button from "../components/Button";
 
 const AuthPage = () => {
     const [formType, setFormType] = useState('login');
@@ -14,6 +15,7 @@ const AuthPage = () => {
 
     const navigate = useNavigate();
     const dispatch = useDispatch();
+    const {request} = useFetch()
 
     useEffect(() => {
         if (token) {
@@ -25,64 +27,37 @@ const AuthPage = () => {
     const onRegister = (e) => {
         e.preventDefault();
 
-        const formData = new FormData(e.target)
-        fetch("/auth/new", {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRF-Token': csrfToken,
-            }
-        })
-            .then(res => res.json())
+        const requestBody = new FormData(e.target)
+
+        request("/auth/new", "POST", requestBody)
             .then(data => {
-                console.log(data)
-                if (!data.errors) {
+                setFormType("login")
                     // TODO
                     // добавить валидацию полей и вывод ошибок в зависимости от типа ошибки
                     // добавить подсказку об успешной решистрации
-                    setFormType("login")
-                }
-                else {
-                    throw new Error(data.errors)
-                }
             })
-            .catch(error => {
-                console.log(error)
-            })
-        e.target.reset()
+            .catch(error => console.log(error))
 
+        e.target.reset()
     }
 
     const onLogIn = (e) => {
         e.preventDefault();
-        const formData = new FormData(e.target)
-        fetch("/auth/login", {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRF-Token': csrfToken,
-            }
-        })
-            .then(res => res.json())
+        const requestBody = new FormData(e.target)
+        request("/auth/login", "POST", requestBody)
             .then(data => {
-                console.log(data)
-                if (!data.errors) {
-                    dispatch(sessionEnter(data.token))
-                    dispatch(setAll({
+                dispatch(sessionEnter(data.token))
+                dispatch(setAll(
+                    {
                         user_id: data.user_id,
                         username: data.username,
                         avatar: data.avatar_url
-                    }))
-                    window.localStorage.setItem("token", data.token)
-                    navigate("/user")
-                }
-                else {
-                    throw new Error("error while fetch login")
-                }
+                    }
+                ))
+                window.localStorage.setItem("token", data.token)
+                navigate("/user")
             })
-            .catch(error => {
-                console.log(error)
-            })
+            .catch(error => console.log(error))
         e.target.reset();
     }
 

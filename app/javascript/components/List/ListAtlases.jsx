@@ -1,47 +1,31 @@
 import React, {useEffect, useState} from "react";
+import useFetch from "../../services/useFetch";
+
+import {useSelector} from "react-redux";
 
 import Popup from "../Popup";
 import List from "./List";
 import Button from "../Button";
 import CardAtlas from "./Cards/CardAtlas";
 
-import {useSelector} from "react-redux";
-const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-
 
 const ListAtlases = () => {
     const {user_id} = useSelector(state => state.user);
-    const {token} = useSelector(state => state.session);
 
     const [activeView, setActiveView] = useState('list');
     const [modal, setModal] = useState(null);
-
     const [atlases, setAtlases] = useState([]);
 
-    //fetch atlases
+    const {request} = useFetch();
+
     useEffect(() => {
-        console.log("token")
-        console.log(token)
-        fetch('/atlases', {
-            method: "GET",
-            headers: {
-                'X-CSRF-Token': csrfToken,
-                Authorization: `Bearer ${token}`
-            }
-        })
-            .then(res => res.json())
+        request("/atlases", "GET")
             .then(data => {
-                if (data.atlases) {
-                    setAtlases(data.atlases)
-                }
-                else {
-                    throw new Error(data.errors)
-                }
-
-
+                setAtlases(data.atlases)
             })
-            .catch(err => console.log("LIST ATLASES ERROR" + err.message))
-    }, [token]);
+            .catch(err => console.log("Error in ListAtlases: " + err))
+
+    }, []);
 
     const hideModal = () => {
         setModal(null)
@@ -49,22 +33,12 @@ const ListAtlases = () => {
 
     const onAddAtlas = (e) => {
         e.preventDefault();
-        const formData = new FormData(e.target)
-        formData.append('user_id', user_id)
-        fetch("/atlas", {
-            method: "POST",
-            body: formData,
-            headers: {
-                'X-CSRF-Token': csrfToken,
-                Authorization: `Bearer ${token}`
-            }
-        })
-            .then(res => res.json())
+
+        let requestBody = new FormData(e.target)
+        requestBody.append('user_id', user_id)
+
+        request("/atlas", "POST", requestBody)
             .then(data => {
-                if (data.errors) {
-                    throw new Error(data.errors);
-                }
-                console.log(data)
                 hideModal();
                 setAtlases(atlases => [data, ...atlases])
             })
@@ -72,7 +46,14 @@ const ListAtlases = () => {
     }
 
     const onDeleteAtlas = (atlasId) => {
-        setAtlases(atlases => atlases.filter(atlas => atlas.atlas_id !== atlasId))
+        let requestBody = new FormData();
+        requestBody.append('atlas_id', atlasId);
+
+        request("/atlas", "DELETE", requestBody)
+            .then(data => {
+                setAtlases(atlases => atlases.filter(atlas => atlas.atlas_id !== atlasId))
+            })
+            .catch(err => console.log("Error in deleteAtlas: " + err))
     }
 
     const showModal = () =>  {

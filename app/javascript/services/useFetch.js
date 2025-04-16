@@ -6,16 +6,16 @@ const useFetch = () => {
 
     const token = window.localStorage.getItem('token');
 
-    if (!token) {
-        throw new Error("No token provided")
-    }
+    // if (!token) {
+    //     throw new Error("No token provided")
+    // }
 
     const headers = {
         'X-CSRF-Token': csrfToken,
         Authorization: `Bearer ${token}`
     }
 
-    const request = async (url, method, body) => {
+    const request = async (url, method, body = null) => {
 
        try {
             const response = await fetch(url, {method, body, headers});

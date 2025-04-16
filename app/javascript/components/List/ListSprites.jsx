@@ -1,5 +1,6 @@
-
 import React, {useEffect, useState} from "react";
+import useFetch from "../../services/useFetch";
+
 import {useDispatch, useSelector} from "react-redux";
 import {updateAtlasImage} from "../../slices/atlasSlice";
 
@@ -8,36 +9,23 @@ import Button from "../Button";
 import List from "./List";
 import CardSprite from "./Cards/CardSprite";
 
-const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-
-
 const ListSprites = () => {
-    const {token} = useSelector(state => state.session);
     const {atlas_id} = useSelector(state => state.atlas)
     const [activeView, setActiveView] = useState('gallery');
     const [modal, setModal] = useState(null);
-    const dispatch = useDispatch();
-
     const [sprites, setSprites] = useState([]);
+
+    const dispatch = useDispatch();
+    const {request} = useFetch();
 
     //fetch cards
     useEffect(() => {
         if (atlas_id) {
-            fetch(`/atlas/${atlas_id}/sprites`, {
-                method: "GET",
-                headers: {
-                    'X-CSRF-Token': csrfToken,
-                    Authorization: `Bearer ${token}`
-                }
-            })
-                .then(res => res.json())
+            request(`/atlas/${atlas_id}/sprites`, "GET")
                 .then(data => {
-                    if (data.error || data.errors) {
-                        throw new Error(data)
-                    }
                     setSprites(data.sprites)
                 })
-                .catch(err => console.log("Error in ListSprites: " + err.error + err.errors))
+                .catch(err => console.log("Error in ListSprites: " + err))
         }
     }, [atlas_id]);
 
@@ -47,22 +35,12 @@ const ListSprites = () => {
 
     const onAddSprite = (e) => {
         e.preventDefault();
-        const formData = new FormData(e.target)
-        formData.append('atlas_id', atlas_id)
-        fetch("/sprite", {
-            method: "POST",
-            body: formData,
-            headers: {
-                'X-CSRF-Token': csrfToken,
-                Authorization: `Bearer ${token}`
-            }
-        })
-            .then(res => res.json())
+
+        let requestBody = new FormData(e.target)
+        requestBody.append('atlas_id', atlas_id)
+
+        request("/sprite", "POST", requestBody)
             .then(data => {
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-               // console.log(data)
                 hideModal();
                 dispatch(updateAtlasImage(data.atlas_img))
                 setSprites(sprites => [ ...sprites, data.sprite])
@@ -71,28 +49,14 @@ const ListSprites = () => {
     }
 
     const onDeleteSprite = (spriteId) => {
-        let formData = new FormData();
-        formData.append('sprite_id', spriteId);
-        formData.append('atlas_id', atlas_id);
-        fetch("/sprite", {
-            method:"DELETE",
-            body: formData,
-            headers: {
-                'X-CSRF-Token': csrfToken,
-                Authorization: `Bearer ${token}`
-            }
-        })
-            .then(res => res.json())
+        let requestBody = new FormData();
+        requestBody.append('sprite_id', spriteId);
+        requestBody.append('atlas_id', atlas_id);
+
+        request("/sprite", "DELETE", requestBody)
             .then(data => {
-                if (!data.message)
-                { throw new Error(data.error + data.errors)}
-                else
-                {
-                    dispatch(updateAtlasImage(data.atlas_img))
-                    setSprites(sprites => sprites.filter(sprite => sprite.sprite_id !== spriteId))
-                    // onDeleteSprite(spriteId)
-                    console.log(data)
-                }
+                dispatch(updateAtlasImage(data.atlas_img))
+                setSprites(sprites => sprites.filter(sprite => sprite.sprite_id !== spriteId))
             })
             .catch(err => console.log("Error in deleteAtlas: " + err))
     }

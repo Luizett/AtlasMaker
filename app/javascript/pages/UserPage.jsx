@@ -1,20 +1,18 @@
 import React, {useEffect, useState} from "react";
-import Header from "./_Header";
-import Page from "../components/Page";
-import List from "../components/List/List";
-import Button from "../components/Button";
+import useFetch from "../services/useFetch";
+import {useNavigate} from "react-router";
 
-import store from "../slices/store";
 import {useDispatch, useSelector} from "react-redux";
-import {redirect, useNavigate} from "react-router";
 import {changeUsername} from "../slices/userSlice";
 import {sessionLeave} from "../slices/sessionSlice";
-import Popup from "../components/Popup";
 import {resetAll} from "../slices/userSlice";
-import CardAtlas from "../components/List/Cards/CardAtlas";
+
+import Header from "./_Header";
+import Page from "../components/Page";
+import Button from "../components/Button";
+import Popup from "../components/Popup";
 import ListAtlases from "../components/List/ListAtlases";
 
-const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
 const UserPage = () => {
     const {username, user_id} = useSelector(state => state.user);
@@ -22,14 +20,13 @@ const UserPage = () => {
 
     const [popup, setPopup] = useState("none");
 
+    const dispatch = useDispatch();
     const navigate = useNavigate();
     useEffect(() => {
         if (!token) {
             navigate("/auth");
         }
     }, [])
-
-    const dispatch = useDispatch();
 
     const onExit = () => {
         dispatch(sessionLeave());
@@ -106,35 +103,22 @@ const UserPage = () => {
 }
 
 const UsernamePopup = (props) => {
-
-    // const [username, setUsername] = useState("")
     const dispatch = useDispatch();
+    const {request} = useFetch();
     const onChangeUsername = (e) => {
         e.preventDefault();
         const formData = new FormData(e.target)
         formData.append('user_id', props.userId);
-        fetch("/user/username", {
-            method: "PATCH",
-            body: formData,
-            headers: {
-                'X-CSRF-Token': csrfToken,
-            }
 
-        }).then(res => res.json())
-          .then(data => {
-              // обновление данных в сторе
-                if (data.errors) {
-                    throw new Error(data.errors)
-                } else {
-                    dispatch(changeUsername(data.username));
-                    e.target.reset();
-                    props.setPopup('none');
-                }
-          })
-            .catch(err => {
-                document.getElementById("loginPopup-error").textContent = err.message
+        request("/user/username", "PATCH", formData)
+            .then(data => {
+                // обновление данных в сторе
+                dispatch(changeUsername(data.username));
+                e.target.reset();
+                props.setPopup('none');
+            }).catch(err => {
+                document.getElementById("loginPopup-error").textContent = 'Username is already taken'
             })
-
     }
 
     return (
@@ -182,36 +166,26 @@ const AvatarPopup = (onChange) => {
         <Popup id="loginPopup">
             <label>New password</label>
             <input/>
-            <Button type="change" onClick={onChangeAvatar}>Change password</Button>
+            <Button type="change" onClick={onChangeAvatar}>Change avatar</Button>
         </Popup>
     )
 }
 
 const DeletePopup = (props) => {
+    const {request} = useFetch();
     const dispatch = useDispatch();
     const navigate = useNavigate();
-// todo delete popup
     const onDelete = () => {
         let formData = new FormData();
-        formData.append('user_id', props.userId)
-        fetch("/user", {
-            method: "DELETE",
-            body: formData,
-            headers: {
-                'X-CSRF-Token': csrfToken,
-            }
-        }).then(res => res.json())
-            .then(data => {
-                if (data.errors) {
-                    throw new Error(data.errors)
-                }else {
-                    props.setPopup('none');
-                    dispatch(sessionLeave());
-                    dispatch(resetAll());
-                    window.localStorage.removeItem("token");
-                    navigate("/");
+        formData.append('user_id', props.userId);
 
-                }
+        request("/user","DELETE", formData)
+            .then(data => {
+                props.setPopup('none');
+                dispatch(sessionLeave());
+                dispatch(resetAll());
+                window.localStorage.removeItem("token");
+                navigate("/");
             })
             .catch(err => console.log(err.message))
     }
@@ -219,7 +193,7 @@ const DeletePopup = (props) => {
     return (
         <Popup id="loginPopup">
             <p>Are you sure to delete your account?</p>
-            <Button type="change" onClick={onDelete}>Change password</Button>
+            <Button type="change" onClick={onDelete}>Yes, delete my account</Button>
         </Popup>
     )
 }
