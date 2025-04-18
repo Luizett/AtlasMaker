@@ -357,6 +357,8 @@ class AtlasesController < ApplicationController
 
     skylines = [] # skyline = { start_height, start_width, end_width, width}
     coords = [] # coord = { img_id, start_height, start_width, height, width }
+    widespaces = [] # wides = { start_height, start_width, height, width, square }  # must be sorted by square,
+                                                                                    #  when find smaller spacethat fit search must be stoppes
 
     atlas_img = MiniMagick::Image.open(url_for(@atlas.atlas_img))
     atlas_img.colorspace "sRGB"
@@ -376,43 +378,26 @@ class AtlasesController < ApplicationController
       sprite_height = sprite_img.height
       sprite_width = sprite_img.width
 
-      # если нарушено правило 3:4 или если нет подходящих линий раширяем спрайт вправо
-      # подходящая линия = линия такой же длины или больше или же меньше но с местом достаточным для размещения
+      widespace = nil
+      # пробуем найти место в widespaces
+      widespaces.each do |widesp|
+        if sprite_height <= widesp[:height] && sprite_width <= widesp[:width]
+          widespace = widesp
+          break
+        end
+      end
 
-
-      skyline = choose_skyline(skylines, sprite_width)
-      ratio = atlas_height / atlas_width.to_f
-      if  ratio > 0.75 || !skyline
-        # добавляем спрайт справа
-
-        # создаём новый горизонт
-        skyline = {
-          start_height: sprite_height,
-          start_width: atlas_width,
-          end_width: atlas_width + sprite_width,
-          width: sprite_width
-        }
-        skylines.push(skyline)
-
-        # добавляем координаты
+      if widespace
+        # вставляем спрайт в найденное место
         coord = {
           id: sprite.id,
-          start_height: 0,
-          start_width: skyline[:start_width],
+          start_height: widespace[:start_height],
+          start_width: widespace[:start_width],
           height: sprite_height,
-          width:sprite_width
+          width: sprite_width
         }
         coords.push(coord)
 
-        # изменяем размер атласа
-        atlas_width += sprite_width
-        atlas_height = sprite_height if atlas_height < sprite_height
-        atlas_img.combine_options do |c|
-          c.background "none"
-          c.extent "#{atlas_width}x#{atlas_height}"
-        end
-
-        # вставляем спрайт в атлас по координатам
         atlas_img = atlas_img.composite(sprite_img) do |c|
           c.compose "Over"
           c.geometry "+#{coord[:start_width]}+#{coord[:start_height]}"
@@ -420,58 +405,159 @@ class AtlasesController < ApplicationController
           c.colorspace "sRGB"
         end
 
-      else
-        # вставляем спрайт на найденный горизонт
-
-        coord = {
-          id: sprite.id,
-          start_height: skyline[:start_height],
-          start_width: skyline[:start_width],
-          height: sprite_height,
-          width: sprite_width
+        # заменяем старое widespace на новые образовавшиеся
+        ws1 = {
+          start_width: widespace[:start_width] + coord[:width],
+          start_height: widespace[:start_height],
+          width: widespace[:width] - coord[:width]
         }
-        coords.push(coord)
+        ws2 = {
+          start_width: widespace[:start_width],
+          start_height: widespace[:start_height] + coord[:height],
+          height: widespace[:height] - coord[:height]
+        }
 
-        # изменяем размер атласа при необходимости
-        if atlas_height <  sprite_height + coord[:start_height]
-          atlas_height = sprite_height + coord[:start_height]
+        # проверяем какой разрез сделать сравнивая соотношения сторон (надо сделать одну из областей как можно больше по площади)
+        if coord[:width] / widespace[:width].to_d < coord[:height] / widespace[:height].to_f
+          ws1[:height] = widespace[:height]
+          ws2[:width] =  coord[:width]
+        else
+          ws1[:height] = coord[:height]
+          ws2[:width] =  widespace[:width]
+        end
+        ws1[:square] = ws1[:height] * ws1[:width]
+        ws2[:square] = ws2[:height] * ws2[:width]
+
+        widespaces.delete(widespace)
+        widespaces.push(ws1) if ws1[:square] > 0
+        widespaces.push(ws2) if ws2[:square] > 0
+
+        widespaces = widespaces.sort_by { |w| w[:square] }
+
+      else # если widespace не найден то переходим к основному алгоритму со skylines
+
+        # если нарушено правило 3:4 или если нет подходящих линий раширяем спрайт вправо
+        # подходящая линия = линия такой же длины или больше или же меньше но с местом достаточным для размещения
+
+        skyline = choose_skyline(skylines, sprite_width)
+        ratio = atlas_height / atlas_width.to_f
+        if  ratio > 0.75 || !skyline
+          # добавляем спрайт справа
+
+          # создаём новый горизонт
+          skyline = {
+            start_height: sprite_height,
+            start_width: atlas_width,
+            end_width: atlas_width + sprite_width,
+            width: sprite_width
+          }
+          skylines.push(skyline)
+
+          # добавляем координаты
+          coord = {
+            id: sprite.id,
+            start_height: 0,
+            start_width: skyline[:start_width],
+            height: sprite_height,
+            width: sprite_width
+          }
+          coords.push(coord)
+
+          # изменяем размер атласа
+          atlas_width += sprite_width
+          atlas_height = sprite_height if atlas_height < sprite_height
           atlas_img.combine_options do |c|
             c.background "none"
             c.extent "#{atlas_width}x#{atlas_height}"
           end
-        end
 
-        atlas_img = atlas_img.composite(sprite_img) do |c|
-          c.compose "Over"
-          c.geometry "+#{coord[:start_width]}+#{coord[:start_height]}"
-          c.alpha "on"
-          c.colorspace "sRGB"
-        end
+          # вставляем спрайт в атлас по координатам
+          atlas_img = atlas_img.composite(sprite_img) do |c|
+            c.compose "Over"
+            c.geometry "+#{coord[:start_width]}+#{coord[:start_height]}"
+            c.alpha "on"
+            c.colorspace "sRGB"
+          end
 
-        # skyline_index = skylines.find_index { |s| s[:start_width] == skyline[:start_width] }
-        # raise "error in skyline index" if skyline_index.nil?
+        else
+          # вставляем спрайт на найденный горизонт
+          coord = {
+            id: sprite.id,
+            start_height: skyline[:start_height],
+            start_width: skyline[:start_width],
+            height: sprite_height,
+            width: sprite_width
+          }
+          coords.push(coord)
 
-        # меняем горизонт на актуальный
-        skyline[:width] = sprite_width
-        skyline[:end_width] = skyline[:start_width] + sprite_width
-        skyline[:start_height] += sprite_height
+          # изменяем размер атласа при необходимости
+          if atlas_height <  sprite_height + coord[:start_height]
+            atlas_height = sprite_height + coord[:start_height]
+            atlas_img.combine_options do |c|
+              c.background "none"
+              c.extent "#{atlas_width}x#{atlas_height}"
+            end
+          end
 
-        #skylines[skyline_index] = skyline
-        # удаление занятых линий
-        skylines = skylines.delete_if { |s| skyline[:start_width] <= s[:start_width] && s[:end_width] <= skyline[:end_width] }
-        skylines.insert(0, skyline)
-        skylines = skylines.sort_by{ |s|  [s[:start_width], s[:end_width]] }
+          atlas_img = atlas_img.composite(sprite_img) do |c|
+            c.compose "Over"
+            c.geometry "+#{coord[:start_width]}+#{coord[:start_height]}"
+            c.alpha "on"
+            c.colorspace "sRGB"
+          end
 
-        # изменение затронутой частично линии если она есть
-        next_skyline = skylines[skylines.find_index(skyline)+ 1]
-        if next_skyline && next_skyline[:start_width] < skyline[:end_width]
-          next_skyline[:start_width] = skyline[:end_width]
-          next_skyline[:width] = next_skyline[:end_width] - next_skyline[:start_width]
+          # меняем горизонт на актуальный
+          skyline[:width] = sprite_width
+          skyline[:end_width] = skyline[:start_width] + sprite_width
+
+          # удаление занятых линий ( и добавление новых widespace при наличии)
+          # skylines = skylines.delete_if { |s| skyline[:start_width] <= s[:start_width] && s[:end_width] <= skyline[:end_width] }
+          skylines = skylines.delete_if do |s|
+            if skyline[:start_width] <= s[:start_width] && s[:end_width] <= skyline[:end_width]
+              if s[:start_height] != skyline[:start_height]
+                new_widespace = {
+                  start_height: s[:start_height],
+                  start_width: s[:start_width],
+                  width: s[:width],
+                  height: skyline[:start_height] - s[:start_height]
+                }
+                new_widespace[:square] = new_widespace[:width] * new_widespace[:height]
+                widespaces.push(new_widespace)
+              end
+              true
+            else false
+            end
+          end
+          skyline[:start_height] += sprite_height
+          skylines.insert(0, skyline)
+          skylines = skylines.sort_by{ |s|  [s[:start_width], s[:end_width]] }
+
+          # изменение затронутой частично линии если она есть (и добавление нового widespace)
+          next_skyline = skylines[skylines.find_index(skyline)+ 1]
+          if next_skyline && next_skyline[:start_width] < skyline[:end_width]
+
+            if next_skyline[:start_height] != coord[:start_height]
+              new_widespace = {
+                start_height: +next_skyline[:start_height],
+                start_width: +next_skyline[:start_width],
+                height: coord[:start_height] - next_skyline[:start_height],
+                width: skyline[:end_width] - next_skyline[:start_width]
+              }
+              new_widespace[:square] = new_widespace[:width] * new_widespace[:height]
+              widespaces.push(new_widespace)
+            end
+
+            next_skyline[:start_width] = skyline[:end_width]
+            next_skyline[:width] = next_skyline[:end_width] - next_skyline[:start_width]
+
+          end
+          widespaces = widespaces.sort_by { |w| w[:square] }
         end
 
       end
 
     end
+
 
     @atlas.atlas_img.attach(
       io: File.open(atlas_img.path),
@@ -479,7 +565,7 @@ class AtlasesController < ApplicationController
       content_type: 'image/png'
     )
 
-    @atlas.coords = { type: "skyline", coords: coords, skylines: skylines }
+    @atlas.coords = { type: "skyline", coords: coords, skylines: skylines, widespaces: widespaces }
     @atlas.save
 
     render json: { message: "Atlas successfully updated.", atlas_img: url_for(@atlas.atlas_img) }
