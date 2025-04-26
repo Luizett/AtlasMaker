@@ -4,6 +4,7 @@ class AtlasesController < ApplicationController
 
   before_action :authenticate_request
 
+  include SkylineAlgo
   # TODO создать здесь обработчики событий с атласами: добавление удаление
   # метод генерации изображения атласа по присоединённым изображениям (по вызову)
   # сначала просто склейка изображений подряд как в тестовой пробе
@@ -440,6 +441,7 @@ class AtlasesController < ApplicationController
         # подходящая линия = линия такой же длины или больше или же меньше но с местом достаточным для размещения
 
         skyline = choose_skyline(skylines, sprite_width)
+        skyline = skyline.symbolize_keys if skyline.respond_to?(:symbolize_keys)
         ratio = atlas_height / atlas_width.to_f
         if  ratio > 0.75 || !skyline
           # добавляем спрайт справа
@@ -570,50 +572,8 @@ class AtlasesController < ApplicationController
 
     render json: { message: "Atlas successfully updated.", atlas_img: url_for(@atlas.atlas_img) }
   end
-  private
-
-  def choose_skyline (skylines, sprite_width)
-    # лучший вариант - как можно ниже и как можно короче и как можно левее
-    return nil if skylines.empty?
-    best_skyline = nil
-
-    #current_skyline = skylines[0].dup
-
-    # сортировка горизонтов от низшего к верхнему и получаение индексов элементов
-    sorted_lines_ind = skylines.each_with_index.sort_by { |s, ind| s[:start_height] }.map { |pair| pair[1] }
-
-    # поиск соседних горизонтов, которые были бы ниже и с которыми можно объединиться по ширине
-    sorted_lines_ind.each do |i|
-      line = skylines[i].dup
-
-      # где-то не переназначается start_width
-
-      # находим крайнюю точку левых соседей
-      (i-1).downto(0) do |left_ind|
-        if skylines[left_ind][:start_height] <= line[:start_height]
-          line[:start_width] = skylines[left_ind][:start_width]
-        else
-          break
-        end
-      end
-
-      # находим крайнюю точку правых соседей
-      (i+1..skylines.size-1).each do |right_ind|
-        if skylines[right_ind][:start_height] <= line[:start_height]
-          line[:end_width] = skylines[right_ind][:end_width]
-        else
-          break
-        end
-      end
-      line[:width] = line[:end_width] - line[:start_width]
-
-      if line[:width] >= sprite_width
-        return line
-      end
-    end
 
 
-    nil
-  end
+
 
 end

@@ -1,8 +1,7 @@
 require 'mini_magick'
-
 class SpriteController < ApplicationController
   before_action :authenticate_request
-
+  include SkylineAlgo
   def show_all
     raise "user not auth " unless @current_user
     atlas = @current_user.atlases.find_by_id(params[:atlas_id])
@@ -233,8 +232,209 @@ private
   end
 
   def create_skyline
+
+    coords = @atlas.coords["coords"]
+    widespaces = @atlas.coords["widespaces"]
+    skylines = @atlas.coords["skylines"]
+
+    atlas_img = MiniMagick::Image.open(url_for(@atlas.atlas_img))
+    atlas_width = atlas_img.width
+    atlas_height = atlas_img.height
+
+    sprite_img = MiniMagick::Image.open(url_for(@sprite.sprite_img))
+    sprite_width = sprite_img.width
+    sprite_height = sprite_img.height
+
+
+    widespace = nil
+    # пробуем найти место в widespaces
+    widespaces.each do |widesp|
+      if sprite_height <= widesp["height"] && sprite_width <= widesp["width"]
+        widespace = widesp
+        break
+      end
+    end
+
+    if widespace
+      # вставляем спрайт в найденное место
+      coord = {
+        "id": @sprite.id,
+        "start_height": widespace["start_height"],
+        "start_width": widespace["start_width"],
+        "height": sprite_height,
+        "width": sprite_width
+      }.stringify_keys
+      coords.push(coord)
+
+      atlas_img = atlas_img.composite(sprite_img) do |c|
+        c.compose "Over"
+        c.geometry "+#{coord["start_width"]}+#{coord["start_height"]}"
+        c.alpha "on"
+        c.colorspace "sRGB"
+      end
+
+      # заменяем старое widespace на новые образовавшиеся
+      ws1 = {
+        "start_width": widespace["start_width"] + coord["width"],
+        "start_height": widespace["start_height"],
+        "width": widespace["width"] - coord["width"]
+      }.stringify_keys
+      ws2 = {
+        "start_width": widespace["start_width"],
+        "start_height": widespace["start_height"] + coord["height"],
+        "height": widespace["height"] - coord["height"]
+      }.stringify_keys
+
+      # проверяем какой разрез сделать сравнивая соотношения сторон (надо сделать одну из областей как можно больше по площади)
+      if coord["width"] / widespace["width"].to_d < coord["height"] / widespace["height"].to_f
+        ws1["height"] = widespace["height"]
+        ws2["width"] =  coord["width"]
+      else
+        ws1["height"] = coord["height"]
+        ws2["width"] =  widespace["width"]
+      end
+      ws1["square"] = ws1["height"] * ws1["width"]
+      ws2["square"] = ws2["height"] * ws2["width"]
+
+      widespaces.delete(widespace)
+      widespaces.push(ws1) if ws1["square"] > 0
+      widespaces.push(ws2) if ws2["square"] > 0
+
+      widespaces = widespaces.sort_by { |w| w["square"] }
+
+    else # если widespace не найден то переходим к основному алгоритму со skylines
+
+      # если нарушено правило 3:4 или если нет подходящих линий раширяем спрайт вправо
+      # подходящая линия = линия такой же длины или больше или же меньше но с местом достаточным для размещения
+
+      skyline = choose_skyline(skylines, sprite_width)
+      ratio = atlas_height / atlas_width.to_f
+      if  ratio > 0.75 || !skyline
+        # добавляем спрайт справа
+
+        # создаём новый горизонт
+        skyline = {
+          start_height: sprite_height,
+          start_width: atlas_width,
+          end_width: atlas_width + sprite_width,
+          width: sprite_width
+        }.stringify_keys
+        skylines.push(skyline)
+
+        # добавляем координаты
+        coord = {
+          id: @sprite.id,
+          start_height: 0,
+          start_width: skyline["start_width"],
+          height: sprite_height,
+          width: sprite_width
+        }.stringify_keys
+        coords.push(coord)
+
+        # изменяем размер атласа
+        atlas_width += sprite_width
+        atlas_height = sprite_height if atlas_height < sprite_height
+        atlas_img.combine_options do |c|
+          c.background "none"
+          c.extent "#{atlas_width}x#{atlas_height}"
+        end
+
+        # вставляем спрайт в атлас по координатам
+        atlas_img = atlas_img.composite(sprite_img) do |c|
+          c.compose "Over"
+          c.geometry "+#{coord["start_width"]}+#{coord["start_height"]}"
+          c.alpha "on"
+          c.colorspace "sRGB"
+        end
+
+      else
+        # вставляем спрайт на найденный горизонт
+        coord = {
+          id: @sprite.id,
+          start_height: skyline["start_height"],
+          start_width: skyline["start_width"],
+          height: sprite_height,
+          width: sprite_width
+        }.stringify_keys
+        coords.push(coord)
+
+        # изменяем размер атласа при необходимости
+        if atlas_height <  sprite_height + coord["start_height"]
+          atlas_height = sprite_height + coord["start_height"]
+          atlas_img.combine_options do |c|
+            c.background "none"
+            c.extent "#{atlas_width}x#{atlas_height}"
+          end
+        end
+
+        atlas_img = atlas_img.composite(sprite_img) do |c|
+          c.compose "Over"
+          c.geometry "+#{coord["start_width"]}+#{coord["start_height"]}"
+          c.alpha "on"
+          c.colorspace "sRGB"
+        end
+
+        # меняем горизонт на актуальный
+        skyline["width"] = sprite_width
+        skyline["end_width"] = skyline["start_width"] + sprite_width
+
+        # удаление занятых линий ( и добавление новых widespace при наличии)
+        # skylines = skylines.delete_if { |s| skyline[:start_width] <= s[:start_width] && s[:end_width] <= skyline[:end_width] }
+        skylines = skylines.delete_if do |s|
+          if skyline["start_width"] <= s["start_width"] && s["end_width"] <= skyline["end_width"]
+            if s["start_height"] != skyline["start_height"]
+              new_widespace = {
+                start_height: s["start_height"],
+                start_width: s["start_width"],
+                width: s["width"],
+                height: skyline["start_height"] - s["start_height"]
+              }.stringify_keys
+              new_widespace["square"] = new_widespace["width"] * new_widespace["height"]
+              widespaces.push(new_widespace)
+            end
+            true
+          else false
+          end
+        end
+        skyline["start_height"] += sprite_height
+        skylines.insert(0, skyline)
+        skylines = skylines.sort_by{ |s|  [s["start_width"], s["end_width"]] }
+
+        # изменение затронутой частично линии если она есть (и добавление нового widespace)
+        next_skyline = skylines[skylines.find_index(skyline)+ 1]
+        if next_skyline && next_skyline["start_width"] < skyline["end_width"]
+
+          if next_skyline["start_height"] != coord["start_height"]
+            new_widespace = {
+              start_height: +next_skyline["start_height"],
+              start_width: +next_skyline["start_width"],
+              height: coord["start_height"] - next_skyline["start_height"],
+              width: skyline["end_width"] - next_skyline["start_width"]
+            }.stringify_keys
+            new_widespace["square"] = new_widespace["width"] * new_widespace["height"]
+            widespaces.push(new_widespace)
+          end
+
+          next_skyline["start_width"] = skyline["end_width"]
+          next_skyline["width"] = next_skyline["end_width"] - next_skyline["start_width"]
+
+        end
+        widespaces = widespaces.sort_by { |w| w["square"] }
+      end
+    end
+
+    @atlas.atlas_img.attach(
+      io: File.open(atlas_img.path),
+      filename: @atlas.title + ".png",
+      content_type: "image/png"
+    )
+
+    @atlas.coords = { type: "skyline", coords: coords, skylines: skylines, widespaces: widespaces }
+    @atlas.save
   end
 
+
+  #=============================#
   # DELETE
 
   def delete_inline
@@ -396,30 +596,6 @@ private
         c.alpha "on"
       end
     end
-
-    # if coord["start_width"] != 0 && shelf["height"] != 0
-    #   shelf_left_part = MiniMagick::Image.open(url_for(@atlas.atlas_img))
-    #   shelf_left_part = shelf_left_part.combine_options do |c|
-    #     c.extent "#{coord["start_width"]}x#{shelf["height"]}+0+#{shelf["start_height"]}"
-    #     c.background "none"
-    #     c.colorspace "sRGB"
-    #     c.alpha "on"
-    #     end
-    #   shelf_left_part_h = shelf_left_part.height
-    #   shelf_left_part_w = shelf_left_part.width
-    # end
-    #    shelf_left_part = atlas_img.extent("#{coord["start_width"]}x#{shelf["height"]}+0+#{shelf["start_height"]}")
-
-    # shelf_right_part = MiniMagick::Image.open(url_for(@atlas.atlas_img))
-    # shelf_right_part = shelf_right_part.combine_options do |c|
-    #   c.extent "#{shelf["width"] - (coord["start_width"] + coord["width"])}x#{shelf["height"]}+#{coord["start_width"] + coord["width"]}+#{shelf["start_height"]}"
-    #   c.background "none"
-    #   c.colorspace "sRGB"
-    #   c.alpha "on"
-    # end
-    # #shelf_right_part = atlas_img.extent("#{shelf["width"] - (coord["start_width"] + coord["width"])}x#{shelf["height"]}+#{coord["start_width"] + coord["width"]}+#{shelf["start_height"]}")
-    # shelf_right_part_h = shelf_right_part.height
-    # shelf_right_part_w = shelf_right_part.width
 
     shelf_right_part_w = shelf["width"] - (coord["start_width"] + coord["width"])
     shelf_right_part_h = shelf["height"]
@@ -703,8 +879,221 @@ private
   end
 
   def delete_skyline
-  rescue => err
-    render json: { error: "Error in delete_skyline in sprite_controller: " + err.message }
+    coords = @atlas.coords["coords"]
+    coord_ind = coords.find_index { |sprite| sprite["id"] == @sprite.id }
+    raise "can't find coord with id: " + @sprite.id unless coord_ind
+    coord = coords[coord_ind]
+
+    widespaces = @atlas.coords["widespaces"]
+    skylines = @atlas.coords["skylines"]
+
+    atlas_img = MiniMagick::Image.open(url_for(@atlas.atlas_img))
+    atlas_width = atlas_img.width
+    atlas_height = atlas_img.height
+
+
+    coord_skyline = skylines.find { |s|
+      s["start_height"] == coord["start_height"] + coord["height"] &&
+      coord["start_width"] <= s["start_width"] &&
+      s["end_width"] <= coord["start_width"] + coord["width"]
+    }
+    if coord_skyline # если есть горизонт принадлежащий спрайту
+      coord_skyline["start_height"] -= coord["height"]
+
+      # проверка на области скрытые под другими спрайтами
+      if coord_skyline["width"] != coord["width"]
+        if coord_skyline["start_width"] == coord["start_width"]
+          new_widespace = {
+            start_height: coord["start_height"],
+            start_width: coord["start_width"] + coord["width"],
+            height: coord["height"],
+            width: coord["width"] - coord_skyline["width"],
+            square: coord["height"] * (coord["width"] - coord_skyline["width"]),
+          }.stringify_keys
+        else
+          new_widespace = {
+            start_height: coord["start_height"],
+            start_width: coord["start_width"],
+            height: coord["height"],
+            width: coord["width"] - coord_skyline["width"],
+            square: coord["height"] * (coord["width"] - coord_skyline["width"]),
+          }.stringify_keys
+        end
+        widespaces.push new_widespace
+        widespaces = widespaces.sort_by { |w| w["square"] }
+      end
+
+
+      if coord_skyline["start_height"] == 0 && coord_skyline["end_width"] == atlas_width
+        skylines.delete(coord_skyline)
+      end
+
+      # mask = MiniMagick::Image.open(url_for(@atlas.atlas_img)) do |c|
+      #   c.fill "black" # Всё, что чёрное — останется (непрозрачное)
+      #   c.draw "rectangle 0,0 #{atlas_width},#{atlas_height}" # Заливаем весь фон чёрным
+      #   c.fill "white" # Белый цвет = прозрачность
+      #   c.draw "rectangle 0,0 50,50" # Координаты прозрачного прямоугольника (x1,y1 x2,y2)
+      # end
+      # mask.alpha("off")
+
+      #      mask = MiniMagick::Image.open(url_for(@atlas.atlas_img))
+      # mask = atlas_img.clone
+      # mask.alpha "extract"
+      # mask.combine_options do |c|
+      #   c.fill "black"
+      #   #c.draw "rectangle 50,50 100,100" # ← область, которая станет прозрачной
+      #   c.draw "rectangle #{coord["start_width"]},#{coord["start_height"]} #{coord["start_width"]+coord["width"]},#{coord["start_height"] + coord["height"]}"
+      # end
+      #
+      #
+      # atlas_img.alpha('set')
+      # atlas_img = atlas_img.composite(mask) do |c|
+      #   c.compose "CopyOpacity" # Используем маску для управления прозрачностью
+      # end
+
+      #c.compose "DstIn"  # Режим композиции: оставить только пересечение (прозрачность маски применяется)
+      # atlas_img.combine_options do |c|
+      #   c.alpha "set"
+      #   c.fill "transparent"   # Прозрачный цвет
+      #   c.draw "rectangle #{coord["start_width"]},#{coord["start_height"]} #{coord["start_width"]+coord["width"]},#{coord["start_height"] + coord["height"]}"
+      # end
+
+      # проверяем не надо ли изменить габариты атласа
+      if coord["start_height"] + coord["height"] == atlas_height
+        atlas_height = skylines.max_by { |s| s["start_height"] }["start_height"]
+      end
+
+      if coord["start_width"] + coord["width"] == atlas_width
+        atlas_width = skylines.max_by { |s| s["end_width"] }["end_width"]
+      end
+
+      # atlas_img.combine_options do |c|
+      #   c.extent "#{atlas_width}x#{atlas_height}"
+      #   c.background "none"
+      #   c.colorspace "sRGB"
+      #   c.alpha "on"
+      # end
+
+
+    else # если спрайт полностью внутренний
+
+      new_widespace = {
+        start_height: coord["start_height"],
+        start_width: coord["start_width"],
+        height: coord["height"],
+        width: coord["width"],
+        square: -1,
+      }.stringify_keys
+
+      # поиск доступных для сливания областей (равны или длины или ширины и соприкасаются)
+
+      # массив флагов против лишних проверок (чтобы при нахождении одной из примыкающих сторон проверять только наличие противоположной к ней )
+      sides = { left: true, right: true, up: true, down: true}
+      widespaces.delete_if do |w|
+        if w["height"] == new_widespace["height"] && w["start_height"] == new_widespace["start_height"]
+          if sides[:right] && w["start_width"] == new_widespace["start_width"] + new_widespace["width"] # пространство примыкает справа
+            sides[:right]= false
+          elsif sides[:left] && new_widespace["start_width"] == w["start_width"] + w["width"] # пространство примыкает слева
+            new_widespace["start_width"] = w["start_width"]
+            sides[:left] = false
+          end
+          new_widespace["width"] += w["width"]
+           true
+        elsif w["width"] == new_widespace["width"] && w["start_width"] == new_widespace["start_width"]
+          if sides[:down] && w["start_height"] == new_widespace["start_height"] + new_widespace["height"] # пространство примыкает снизу
+            sides[:down] = false
+          elsif sides[:up] && new_widespace["start_height"] == w["start_height"] + w["height"] # пространство примыкает сверху
+            new_widespace["start_height"] = w["start_height"]
+            sides[:up] = false
+          end
+          new_widespace["height"] += w["height"]
+           true
+        else
+          false
+        end
+      end
+      # (0..widespaces.size).each do |i|
+      #   w = widespaces[i]
+      #   if w["height"] == new_widespace["height"] && w["start_height"] == new_widespace["start_height"]
+      #     if sides[:right] && w["start_width"] == new_widespace["start_width"] + new_widespace["width"] # пространство примыкает справа
+      #       sides[:right]= false
+      #     elsif sides[:left] && new_widespace["start_width"] == w["start_width"] + w["width"] # пространство примыкает слева
+      #       new_widespace["start_width"] = w["start_width"]
+      #       sides[:left] = false
+      #     end
+      #     new_widespace["width"] += w["width"]
+      #     widespaces.delete w
+      #
+      #   elsif w["width"] == new_widespace["width"] && w["start_width"] == new_widespace["start_width"]
+      #     if sides[:up] && w["start_height"] == new_widespace["start_height"] + new_widespace["height"] # пространство примыкает сверху
+      #       new_widespace["start_height"] = w["start_height"]
+      #       sides[:up] = false
+      #     elsif sides[:down] && new_widespace["start_height"] == w["start_height"] + w["height"] # пространство примыкает снизу
+      #       sides[:down] = false
+      #     end
+      #     new_widespace["height"] += w["height"]
+      #     widespaces.delete w
+      #   end
+      # end
+      new_widespace["square"] = new_widespace["width"] * new_widespace["height"]
+      widespaces.push new_widespace
+      widespaces = widespaces.sort_by { |w| w["square"] }
+
+      # atlas_img.combine_options do |c|
+      #   c.alpha "set"
+      #   c.fill "transparent"          # Прозрачный цвет
+      #   c.draw "rectangle #{coord["start_width"]},#{coord["start_height"]} #{coord["start_width"]+coord["width"]},#{coord["start_height"] + coord["height"]}"
+      # end
+
+    end
+
+    #mask = atlas_img.clone
+    mask = MiniMagick::Image.open(url_for(@atlas.atlas_img))
+    mask.alpha "extract"
+    mask.combine_options do |c|
+      c.fill "black"
+      #c.draw "rectangle 50,50 100,100" # ← область, которая станет прозрачной
+      c.draw "rectangle #{coord["start_width"]},#{coord["start_height"]} #{coord["start_width"]+coord["width"]},#{coord["start_height"] + coord["height"]}"
+    end
+
+
+    atlas_img.alpha('set')
+    atlas_img = atlas_img.composite(mask) do |c|
+      c.compose "CopyOpacity" # Используем маску для управления прозрачностью
+    end
+
+    atlas_img.combine_options do |c|
+      c.extent "#{atlas_width}x#{atlas_height}"
+      c.background "none"
+      c.colorspace "sRGB"
+      c.alpha "on"
+    end
+
+    # atlas_img.combine_options do |c|
+    #   c.fill "none"          # Прозрачный цвет
+    #   c.draw "rectangle #{coord["start_width"]},#{coord["start_height"]} #{coord["start_width"]+coord["width"]},#{coord["start_height"] + coord["height"]}"
+    # end
+    #
+    # atlas_img.combine_options do |c|
+    #   c.extent "#{atlas_width}x#{atlas_height}"
+    #   c.background "none"
+    #   c.colorspace "sRGB"
+    #   c.alpha "on"
+    # end
+
+    coords.delete(coord)
+
+    @atlas.atlas_img.attach(
+      io: File.open(atlas_img.path),
+      filename: @atlas.title + ".png",
+      content_type: "image/png"
+    )
+
+    @atlas.coords = { type: "skyline", coords: coords, skylines: skylines, widespaces: widespaces }
+    @atlas.save
+
+
+
   end
 
 end
