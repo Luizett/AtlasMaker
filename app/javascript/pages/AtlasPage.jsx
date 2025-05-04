@@ -9,11 +9,13 @@ import Button from "../components/Button";
 import ListSprites from "../components/List/ListSprites";
 import Spinner from "../components/Spinner";
 import useFetch from "../services/useFetch";
+import consumer from "../channels/consumer";
 
 const AtlasPage = () => {
     const atlasId = useParams().atlas_id
     const { atlas_id, title, atlas_img } = useSelector(state => state.atlas)
     const [loading, setLoading] = useState(false)
+    const [loadingPercent,setLoadingPercent] = useState("0");
 
     const dispatch = useDispatch();
     const {request} = useFetch()
@@ -36,6 +38,17 @@ const AtlasPage = () => {
 
     const onAtlasUpdate = (type) => {
         setLoading(true)
+        const subscription = consumer.subscriptions.create(
+            { channel: 'LoadingChannel', atlas_id: atlas_id },
+            {
+                connected: () => console.log('Connected to LoadingChannel'),
+                disconnected: () => console.log('Disconnected from LoadingChannel'),
+                received: (data) => {
+                    console.log(data)
+                    setLoadingPercent(data.percent)
+                }
+            }
+        )
 
         let requestBody = new FormData()
         requestBody.append("atlas_id", atlasId)
@@ -56,6 +69,7 @@ const AtlasPage = () => {
                 <div className="-mt-10 flex justify-end">
                     <Button type="violet" >Export</Button>
                 </div>
+                <div>{loadingPercent}</div>
 
                 <div className="mt-6 mb-11">
                     <div className="absolute bg-pink h-1 w-screen left-0 mt-5 "></div>

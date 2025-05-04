@@ -36,6 +36,8 @@ class AtlasesController < ApplicationController
     @atlas = @current_user.atlases.find_by_id(params[:atlas_id])
     raise "can't find atlas with id: " + params[:atlas_id] unless @atlas
 
+    ActionCable.server.broadcast("loading_#{@atlas.id}", {percent: "10"})
+
     case params[:type]
     when "inline"
       update_inline
@@ -46,6 +48,8 @@ class AtlasesController < ApplicationController
     else
       raise "op_type is unexpected"
     end
+
+    ActionCable.server.broadcast("loading_#{@atlas.id}", { percent: "100" })
 
     # atlas_url = url_for(atlas.atlas_img)
     #
