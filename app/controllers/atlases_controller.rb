@@ -5,14 +5,8 @@ class AtlasesController < ApplicationController
   before_action :authenticate_request
 
   include SkylineAlgo
-  # TODO создать здесь обработчики событий с атласами: добавление удаление
-  # метод генерации изображения атласа по присоединённым изображениям (по вызову)
-  # сначала просто склейка изображений подряд как в тестовой пробе
-  # затем с использованием алгоритма какого-нибудь (полки)
-  # заглушка под второй алгоритм
-  # второй алгоритм (гильятина)
 
-  def index # todo sort by recent update before send
+  def index
     raise "not authorized" unless @current_user
     atlasess = []
     @current_user.atlases.each do |atlas|
@@ -20,12 +14,16 @@ class AtlasesController < ApplicationController
       atlasess.push({
                       atlas_id: atlas.id,
                       title: atlas.title,
-                      updated_at: atlas.updated_at.strftime('%d-%m-%Y %H:%M'),
+                      #  updated_at: atlas.updated_at.strftime('%d-%m-%Y %H:%M'),
+                      updated_at: atlas.updated_at,
                       atlas_img: atlas.atlas_img.attached? ? url_for(atlas.atlas_img) : nil,
-                      #atlas_size: size
+                      size: atlas.atlas_img
                     })
     end
     raise "atlases empty" unless atlasess
+
+    atlasess.sort_by! { |atl| atl[:updated_at] }.reverse!
+
     render json: { atlases: atlasess }
   rescue => err
     render json: { errors: err }
@@ -172,8 +170,6 @@ class AtlasesController < ApplicationController
     atlas_img.alpha "on"
     atlas_img.background "none"
 
-    # height = atlas_img.height
-    # width = atlas_img.width
 
     height = 0
     width = 0

@@ -14,6 +14,7 @@ Rails.application.routes.draw do
   get "/user" => "home#index"
   patch "user/username" => "authentication#change_username"
   patch "user/password" => "authentication#change_password"
+  patch "user/avatar" => "authentication#change_avatar"
   delete "user" => "authentication#destroy"
 
   # atlas

@@ -2,10 +2,12 @@ require 'mini_magick'
 class SpriteController < ApplicationController
   before_action :authenticate_request
   include SkylineAlgo
+
   def show_all
     raise "user not auth " unless @current_user
     atlas = @current_user.atlases.find_by_id(params[:atlas_id])
     raise "can't find atlas with id: " + params[:atlas_id].to_s unless atlas
+
     sprites = []
     atlas.sprites.each do |sprite|
       sprites.push({
@@ -19,7 +21,7 @@ class SpriteController < ApplicationController
     render json: { errors: "Error in show_all: " + err.message }
   end
 
-  def create # todo create for inline, bookshelf and skyline atlases
+  def create
     raise "user not auth " unless @current_user
     @atlas = @current_user.atlases.find_by_id(params[:atlas_id])
     raise "can't find atlas with id: " + params[:atlas_id].to_s unless @atlas

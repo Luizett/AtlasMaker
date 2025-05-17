@@ -24,7 +24,7 @@ class ApplicationController < ActionController::Base
   def authenticate_request
     raise "empty request" unless request
     raise "empty headers in request" unless request.headers
-    raise "header dosent have Auth" unless request.headers.key?('Authorization')
+    raise "header doesn't have Auth" unless request.headers.key?('Authorization')
     p request.headers
     header = request.headers['Authorization']
     raise 'Not Authorized in auth_request' + request.headers.to_s unless header
@@ -40,7 +40,7 @@ class ApplicationController < ActionController::Base
 
   rescue => e
     render json: { error: "error in auth_request " + e.message }
-    end
+  end
 
 
   SECRET_KEY = Rails.application.credentials.secret_key_base

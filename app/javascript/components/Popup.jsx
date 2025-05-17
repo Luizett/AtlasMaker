@@ -5,8 +5,8 @@ const Popup = (props) => {
         <div id={props.id}
              className="fixed overflow-hidden bg-overlaying top-0 bottom-0 left-0 right-0 z-20">
             <div
-                className="absolute left-1/2 rigt-1/2 -translate-x-1/2 top-1/2 mx-auto
-                            p-6 rounded-xl w-1/5
+                className="absolute left-1/2 rigt-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 mx-auto
+                            p-6 rounded-xl w-min min-w-[300px]
                             bg-cherry text-white flex flex-col ">
                 <button className="place-self-end" onClick={props.closePopup}>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

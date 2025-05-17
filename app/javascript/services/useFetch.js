@@ -25,7 +25,8 @@ const useFetch = () => {
             }
             const data = await response.json();
             if (data.error || data.errors) {
-                throw new Error(`Error in request ${url}: ${data.error} ${data.errors}`)
+              throw new Error(`Error in request ${url}: ${data.error} ${data.errors}`)
+               // throw new Error(data.error)
             }
             return data;
         } catch(e) {
