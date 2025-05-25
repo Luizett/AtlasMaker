@@ -7,15 +7,19 @@ const Home = () => {
         <>
             <div className="bg-russian-violet h-screen overflow-hidden">
                 <Header/>
-
-                <div className="w-4/5 mx-auto h-full flex flex-col justify-center">
-                    <h1 className="text-white text-5xl font-bold font-unbounded w-auto">
+                <div className="sm:w-4/5 mx-5 sm:mx-auto h-full flex flex-col justify-center">
+                    <h1
+                        className="text-white  font-bold font-unbounded w-auto
+                        text-xl sm:text-5xl "
+                    >
                         GENERATE YOUR<br/>
-                        <span className="text-pink text-8xl mt-4 inline-block">
-                                TEXTURE ATLAS
-                            </span>
+                        <span
+                            className="text-pink text-4xl sm:text-8xl  inline-block"
+                        >
+                            TEXTURE ATLAS
+                        </span>
                     </h1>
-                    <p className="text-xl font-unbounded text-timberwolf mt-8 mb-20">
+                    <p className="text-sm sm:text-xl font-unbounded text-timberwolf mt-4 sm:mt-8 mb-10 sm:mb-20">
                         Create seamless texture atlases in seconds with our free online generator!
                         Perfect for game developers, designers, and artists, our tool automatically packs your textures into optimized atlases, reducing draw calls and improving performance.
                         Customize your layout with an intuitive interface — no installation required. Let's make some atlases!
@@ -29,16 +33,6 @@ const Home = () => {
                                       transition duration-300 ease-in-out hover:scale-110">
                         START NOW
                     </Link>
-
-
-                    {/*<p className="text-timberwolf text-base text-center mt-10 font-unbounded leading-2 font-light">*/}
-                    {/*    {"or "}*/}
-                    {/*    <Link to="/auth"*/}
-                    {/*        className="font-normal underline">*/}
-                    {/*        Log In*/}
-                    {/*    </Link>*/}
-                    {/*    {" to save your works"}*/}
-                    {/*</p>*/}
                 </div>
             </div>
         </>

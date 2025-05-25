@@ -7,10 +7,18 @@ const Button = (props) => {
             clazz = "bg-lilac"
             break;
         case 'violet':
-            clazz = "bg-lilac text-lg text-white font-medium font-unbounded shadow-pink shadow-button rounded-full px-5 py-2"
+            clazz = `bg-lilac 
+                     text-sm sm:text-lg text-white font-medium font-unbounded 
+                     shadow-pink shadow-button rounded-full 
+                     px-3 sm:px-5 py-1 sm:py-2 cursor-pointer
+                     h-min`
             break;
         case 'change':
-            clazz = "bg-lilac font-unbounded text-md text-cherry rounded-full px-7 py-3 text-nowrap hover:bg-cherry hover:text-reddish hover:inset-shadow-[0px_0px_5px] hover:inset-shadow-reddish";
+            clazz = `cursor-pointer bg-lilac text-cherry font-unbounded 
+                     text-sm sm:text-base text-nowrap
+                     px-4 sm:px-7 py-2 sm:py-3 
+                     rounded-full
+                     hover:bg-cherry hover:text-reddish hover:inset-shadow-[0px_0px_5px] hover:inset-shadow-reddish`;
             break;
         case 'delete':
     }
@@ -20,7 +28,7 @@ const Button = (props) => {
         : null;
 
     return (
-         <button className={`${clazz} ${props.className}`}
+         <button className={`${clazz} ${props.className} hover:scale-105 `}
                  type={props.btnType? props.btnType : null}
                  onClick={props.onClick}>
             {icon}

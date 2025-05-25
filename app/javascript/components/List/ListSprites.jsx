@@ -103,17 +103,21 @@ const NewSpritePopup = (props) => {
 
     return (
         <Popup id="newSpritePopup" closePopup={props.onClose}>
-            <form onSubmit={props.onAddSprite}>
-                <p>Your new image</p>
-                <label>
+            <form onSubmit={props.onAddSprite} className="flex flex-col  items-center">
+                <label className="text-center">
+                    Choose image...
                     <input
                         name="img"
                         required={true}
+                        className="hidden"
                         id="sprite-input" type="file" accept="image/png, img/jpeg"
                         onChange={(e) => setImgPreview(URL.createObjectURL(e.target.files[0]))}/>
-                    <img src={imgPreview} alt=""/>
+                    <img src={imgPreview} alt="" className="mx-auto mt-4 bg-clip-content  border-pink border-dashed border-2  text-center rounded-md p-4" style={{
+                        backgroundImage: `url(\"/images/transparent.png\")`,
+                        backgroundSize: "cover",
+                    }}/>
                 </label>
-                <Button type="violet" btnType="submit">
+                <Button type="violet" btnType="submit" className="mt-4 w-min">
                     OK
                 </Button>
             </form>

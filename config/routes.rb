@@ -24,10 +24,11 @@ Rails.application.routes.draw do
   post "/atlas" => "atlases#create"
   delete "/atlas" => "atlases#delete"
   put "/atlas" => "atlases#update"
+  patch "/atlas" => "atlases#rename_atlas"
 
   # sprites
   # get "images" => "images#index"
-  get "/atlas/:atlas_id/sprites" => "sprite#show_all"
+  get "/atlas/:atlas_id/sprites" => "sprite#index"
   post "/sprite" => "sprite#create"
   delete "/sprite" => "sprite#delete"
 

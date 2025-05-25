@@ -66,9 +66,11 @@ const ListAtlases = () => {
         return (
             <CardAtlas
                 activeView={activeView}
-                key={atlas.atlas_id} atlasId={atlas.atlas_id}
-                title={atlas.title} updatedAt={atlas.updated_at}
-                atlasImg={atlas.atlas_img} atlasSize={atlas.atlas_size}
+                key={atlas.atlas_id}
+                atlasId={atlas.atlas_id}
+                title={atlas.title}
+                updatedAt={atlas.updated_at}
+                atlasImg={atlas.atlas_img}
                 onDeleteAtlas={onDeleteAtlas}
             />
         );

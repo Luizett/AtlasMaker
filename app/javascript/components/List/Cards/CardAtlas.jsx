@@ -1,35 +1,50 @@
-import React from "react";
+import React, {useState} from "react";
 import {useNavigate} from "react-router";
 
 import Button from "../../Button";
 
 
-const CardAtlas = ({activeView, atlasId, title, updatedAt, atlasImg, atlasSize, onDeleteAtlas}) => {
+const CardAtlas = ({activeView, atlasId, title, updatedAt, atlasImg, onDeleteAtlas}) => {
+    const [size, setSize] = useState({width: 0, height: 0})
     const navigate = useNavigate();
     const openAtlas = (e) => {
         if (!e.target.closest(".delete-btn")) {
             navigate(`/atlas/${atlasId}`)
         }
     }
-//todo поправить картинки в карточках атласов на правильное отобрражение
+
+    const img = new Image();
+    img.src = atlasImg;
+    img.onload = () => {
+        setSize({
+            width: img.naturalWidth,
+            height: img.naturalHeight
+        })
+    }
+
     return activeView === 'gallery'?
         (
-            <div className="flex flex-row bg-panel rounded-2xl p-5 text-white flex-auto max-w-[640px]"
+            <div className="flex flex-row bg-panel rounded-2xl p-5 text-white flex-auto max-w-[600px]"
                  onClick={openAtlas}>
-                <div className="w-1/3">
-                    <img className="aspect-square" src={atlasImg} width={242} height={242} alt=""/>
+                <div className="w-1/2 sm:w-fit"
+                     style={{
+                        backgroundImage: `url(\"/images/transparent.png\")`,
+                        backgroundSize: "cover",
+                    }}
+                >
+                    <img id={`${atlasId}-img`} className="aspect-square object-contain" src={atlasImg} width={242} height={242} alt=""/>
                 </div>
-                <div className="w-2/3 flex flex-col justify-between">
+                <div className="w-full flex flex-col justify-between sm:text-base text-sm">
                     <div className="flex flex-row">
-                        <div className="w-1/3 pl-4 flex flex-col gap-2">
+                        <div className="w-1/3 pl-4 flex flex-col gap-1 sm:gap-2">
                             <p>title:</p>
-                            <p>update:</p>
+                            <p className="hidden sm:visible">update:</p>
                             <p>size:</p>
                         </div>
-                        <div className="w-2/3 flex flex-col gap-2">
+                        <div className="w-2/3 flex flex-col gap-1 sm:gap-2">
                             <p>{title}</p>
-                            <p>{updatedAt}</p>
-                            <p>{atlasSize}</p>
+                            <p className="hidden sm:visible">{updatedAt}</p>
+                            <p>{size.width}x{size.height}</p>
                         </div>
                     </div>
                     <div className="mx-auto delete-btn">
@@ -40,15 +55,21 @@ const CardAtlas = ({activeView, atlasId, title, updatedAt, atlasImg, atlasSize, 
         )
         :
         (
-            <div className="flex flex-row rounded-2xl bg-panel justify-between px-8 py-3 text-white"
+            <div className="flex flex-row
+            rounded-2xl bg-panel justify-between px-3 pr-6 sm:px-8 py-2 sm:py-3 text-white text-sm sm:text-base"
                  onClick={openAtlas}>
-                <div className="flex gap-5">
-                    <img className="aspect-square" width={50} height={50} src={atlasImg} alt=""/>
+                <div className="flex gap-3 sm:gap-5">
+                    <img id={`${atlasId}-img`} className="aspect-square object-cover"
+                         style={{
+                            backgroundImage: `url(\"/images/transparent.png\")`,
+                            backgroundSize: "cover",
+                         }}
+                         width={50} height={50} src={atlasImg} alt=""/>
                     <p className="text-nowrap inline my-auto">{title}</p>
                 </div>
                 <div className="flex flex-row gap-4">
-                    <p className="text-nowrap inline my-auto ">{atlasSize}</p>
-                    <p className="text-nowrap inline my-auto ">{updatedAt}</p>
+                    <p className="text-nowrap my-auto hidden sm:inline">{size.width}x{size.height}</p>
+                    <p className="text-nowrap  my-auto hidden sm:inline">{updatedAt}</p>
                     <button className="bg-cherry rounded-full aspect-square delete-btn" onClick={() => onDeleteAtlas(atlasId)}>
                         <svg className="mx-auto" width="34" height="33" viewBox="0 0 34 33" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path fillRule="evenodd" clipRule="evenodd"

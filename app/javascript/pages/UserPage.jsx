@@ -61,39 +61,39 @@ const UserPage = () => {
 
                 <Header/>
                 <Page title="account">
-                    <div className="mt-8">
-                        <div className="w-[200px] h-[200px] rounded-full bg-timberwolf mx-auto aspect-square overflow-hidden">
-                            <img src={avatar} width={200} height={200}
+                    <div className="mt-4 sm:mt-8">
+                        <div className="w-[100px] sm:w-[200px] h-[100px] sm:h-[200px] rounded-full bg-timberwolf mx-auto aspect-square overflow-hidden">
+                            <img src={avatar} width={200} height={200} alt="your avatar"
                                  className="object-fill"
                             />
                         </div>
 
                         <div className="absolute bg-pink h-1 w-screen left-0  "></div>
                         <p style={{width: "fit-content",}}
-                           className=" absolute bg-russian-violet border-pink border-4 text-white text-xl  rounded-full z-10 py-1.5 px-3 -mt-5 mx-auto left-0 right-0">
+                           className=" absolute bg-russian-violet border-pink border-4 text-white text-lg sm:text-xl  rounded-full z-10 py-1.5 px-3 -mt-5 mx-auto left-0 right-0">
                             {username}
                         </p>
                     </div>
 
-                    <div className="flex flex-row gap-7 mt-16 justify-center flex-wrap">
-                        <Button type="change" className="w-[230px]" onClick={() => setPopup('username')}>
+                    <div className="flex flex-row gap-4 sm:gap-7 mt-16 justify-center flex-wrap">
+                        <Button type="change" className="w-[180px] sm:w-[230px]" onClick={() => setPopup('username')}>
                             change username
                         </Button>
-                        <Button type="change" className="w-[230px]"   onClick={() => setPopup('password')}>
+                        <Button type="change" className="w-[180px] sm:w-[230px]"   onClick={() => setPopup('password')}>
                             change password
                         </Button>
-                        <Button type="change" className="w-[230px]"  onClick={() => setPopup('avatar')}>
+                        <Button type="change" className="w-[180px] sm:w-[230px]"  onClick={() => setPopup('avatar')}>
                             change avatar
                         </Button>
-                        <Button type="change" className="w-[230px]"  onClick={onExit}>
+                        <Button type="change" className="w-[180px] sm:w-[230px]"  onClick={onExit}>
                             exit account
                         </Button>
-                        <Button type="change" className="w-[230px]"  onClick={() => setPopup('delete')}>
+                        <Button type="change" className="w-[180px] sm:w-[230px]"  onClick={() => setPopup('delete')}>
                             delete account
                         </Button>
                     </div>
 
-                    <div className="mt-24">
+                    <div className="mt-8 sm:mt-24">
                         <ListAtlases />
                     </div>
                 </Page>

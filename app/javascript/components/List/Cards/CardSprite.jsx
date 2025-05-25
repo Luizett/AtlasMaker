@@ -2,20 +2,20 @@ import React from "react";
 const CardSprite = ({activeView, spriteId, title, spriteImg, onDeleteSprite}) => {
     return activeView === 'gallery'?
         (
-            <div className="bg-panel border-4 border-pink border-dashed aspect-square rounded-2xl relative p-5 w-1/6">
+            <div className="bg-panel border-4 border-pink border-dashed aspect-square rounded-2xl relative p-5 w-[45%] md:w-1/5 lg:w-1/6 ">
                 <p
                     className="absolute z-10 w-2/3 top-0 left-1/2 right-1/2 -translate-x-1/2
-                                rounded-b-lg px-5 py-2
+                                rounded-b-lg sm:px-5 sm:py-2 px-2 py-1
                                 shadow-[0px_2px_5px_1px_#00000050]
-                                bg-lilac font-unbounded
-                                text-white line-clamp-1 text-center">
+                                bg-lilac font-unbounded block overflow-ellipsis
+                                text-white line-clamp-1 text-center sm:tetx-base text-xs">
                     {title}
                 </p>
-                <div className="bg-" style={{
+                <div className="h-full flex justify-center content-center" style={{
                     backgroundImage: `url(\"/images/transparent.png\")`,
                     backgroundSize: "cover",
                 }}>
-                    <img src={spriteImg} alt=""/>
+                    <img className="aspect-square object-contain" src={spriteImg} alt=""/>
                 </div>
                 <button
                     onClick={() => onDeleteSprite(spriteId)}
@@ -38,7 +38,7 @@ const CardSprite = ({activeView, spriteId, title, spriteImg, onDeleteSprite}) =>
         (
             <div className="flex flex-row rounded-2xl bg-panel justify-between px-8 py-3 text-white">
                 <div className="flex gap-5">
-                    <img className="aspect-square" width={50} height={50} src={spriteImg} alt=""/>
+                    <img className="aspect-square object-cover" width={50} height={50} src={spriteImg} alt=""/>
                     <p className="text-nowrap inline my-auto">{title}</p>
                 </div>
                 <div>

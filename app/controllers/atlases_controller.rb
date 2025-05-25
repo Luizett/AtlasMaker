@@ -9,24 +9,48 @@ class AtlasesController < ApplicationController
   def index
     raise "not authorized" unless @current_user
     atlasess = []
-    @current_user.atlases.each do |atlas|
-      #size = atlas.atlas_img.metadata.to_s
+    @current_user.atlases.sort_by{ |atl| atl[:updated_at]}.reverse.each do |atlas|
       atlasess.push({
                       atlas_id: atlas.id,
                       title: atlas.title,
-                      #  updated_at: atlas.updated_at.strftime('%d-%m-%Y %H:%M'),
-                      updated_at: atlas.updated_at,
+                      updated_at: atlas.updated_at.strftime('%d-%m-%Y %H:%M'),
                       atlas_img: atlas.atlas_img.attached? ? url_for(atlas.atlas_img) : nil,
-                      size: atlas.atlas_img
+                      size: atlas.atlas_img,
+
                     })
     end
     raise "atlases empty" unless atlasess
 
-    atlasess.sort_by! { |atl| atl[:updated_at] }.reverse!
+    # atlasess.sort_by! { |atl| atl[:updated_at] }.reverse!
 
     render json: { atlases: atlasess }
   rescue => err
     render json: { errors: err }
+  end
+
+  def rename_atlas
+    raise "not authorized" unless @current_user
+    @atlas = @current_user.atlases.find_by_id(params[:atlas_id])
+    raise "can't find atlas" unless @atlas
+
+    if @atlas.title == params[:new_title]
+      render json: { message: "same title" }
+      return
+    end
+
+    unless @current_user.atlases.find_by(title: params[:new_title]).blank?
+      render json: { error_titleExists: "Atlas with this name already exists" }
+      return
+    end
+
+    if @atlas.update(title: params[:new_title]) && @atlas.save
+      render json: { message: "Title successfully changed" }
+    else
+      raise "Title" + @atlas.errors[:title][0];
+    end
+
+  rescue => err
+    render json: { error: "Error in update in atlas_controller: " + err.message }
   end
 
   def update # полностью перестроить атлас в заданном типе
@@ -49,44 +73,7 @@ class AtlasesController < ApplicationController
 
     ActionCable.server.broadcast("loading_#{@atlas.id}", { percent: "100" })
 
-    # atlas_url = url_for(atlas.atlas_img)
-    #
-    # atlas_img = MiniMagick::Image.open(atlas_url)
-    # atlas_img.colorspace "sRGB"
-    # atlas_img.alpha "on"
-    # atlas_img.background "none"
-    #
-    # height = atlas_img.height
-    # width = atlas_img.width
-    #
-    # atlas.sprites.each do |sprite|
-    #   sprite_img = MiniMagick::Image.open(url_for(sprite.sprite_img))
-    #   height = [height, sprite_img.height].max
-    #   width = width + sprite_img.width
-    #
-    #
-    #   atlas_img.combine_options do |c|
-    #     c.background "none"
-    #     c.extent "#{width}x#{height}"
-    #   end
-    #
-    #   atlas_img.colorspace "sRGB"
-    #   atlas_img.alpha "on"
-    #
-    #   atlas_img = atlas_img.composite(sprite_img) do |c|
-    #         c.compose "Over"
-    #         c.geometry "+#{width - sprite_img.width}+0"
-    #         c.alpha "on"
-    #         c.colorspace "sRGB"
-    #   end
-    # end
-    #
-    #
-    # atlas.atlas_img.attach(
-    #   io: File.open(atlas_img.path),
-    #   filename: atlas.title + ".png",
-    #   content_type: 'image/png',
-    # )
+
   rescue => err
     render json: { error: "Error in update in atlas_controller: " + err.message }
   end
@@ -129,7 +116,8 @@ class AtlasesController < ApplicationController
     render json: {
         atlas_id: atlas.id,
         title: atlas.title,
-        atlas_img: url_for(atlas.atlas_img)
+        atlas_img: url_for(atlas.atlas_img),
+        type: atlas.coords["type"]
     }
   rescue => err
     render json: { errors: "Error in atlases_controller show: " + err.message }
@@ -179,7 +167,13 @@ class AtlasesController < ApplicationController
       c.extent "#{1}x#{1}"
     end
 
+    ActionCable.server.broadcast("loading_#{@atlas.id}", {percent: "20"} )
+
+    percent = 20
+    percent_per_img = 70.0 / @atlas.sprites.size
+
     @atlas.sprites.each do |sprite|
+
       sprite_img = MiniMagick::Image.open(url_for(sprite.sprite_img))
       sprite_height = sprite_img.height
       sprite_width = sprite_img.width
@@ -209,6 +203,9 @@ class AtlasesController < ApplicationController
         c.colorspace "sRGB"
       end
 
+      percent += percent_per_img
+      ActionCable.server.broadcast("loading_#{@atlas.id}", { percent: percent.round(2) })
+
     end
 
 
@@ -228,10 +225,6 @@ class AtlasesController < ApplicationController
   end
 
   def update_bookshelf
-    # надо хранить дополнительную инфу в коордс в зависимости от используемого метода упаковки
-    # чтобы в будущем уметь удалять и добавлять картинки открывая уже обработанный атлас
-    # нужно не откладывать на потом динамическое добавление и удаление каринок из атласа а сразу  сделать всё для того чтобы всё работало
-
 
     raise "no atlas" unless @atlas
 
@@ -252,6 +245,11 @@ class AtlasesController < ApplicationController
       c.background "none"
       c.extent "#{1}x#{1}"
     end
+
+    ActionCable.server.broadcast("loading_#{@atlas.id}", {percent: "20"} )
+
+    percent = 20
+    percent_per_img = 70.0 / @atlas.sprites.size
 
     @atlas.sprites.each do |sprite|
       sprite_img = MiniMagick::Image.open(url_for(sprite.sprite_img))
@@ -337,6 +335,8 @@ class AtlasesController < ApplicationController
 
       end
 
+      percent += percent_per_img
+      ActionCable.server.broadcast("loading_#{@atlas.id}", { percent: percent.round(2) })
     end
 
 
@@ -373,6 +373,11 @@ class AtlasesController < ApplicationController
       c.background "none"
       c.extent "#{1}x#{1}"
     end
+
+    ActionCable.server.broadcast("loading_#{@atlas.id}", {percent: "20"} )
+
+    percent = 20
+    percent_per_img = 70.0 / @atlas.sprites.size
 
     @atlas.sprites.each do |sprite|
       sprite_img = MiniMagick::Image.open(url_for(sprite.sprite_img))
@@ -558,6 +563,8 @@ class AtlasesController < ApplicationController
 
       end
 
+      percent += percent_per_img
+      ActionCable.server.broadcast("loading_#{@atlas.id}", { percent: percent.round(2) })
     end
 
 
