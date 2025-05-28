@@ -86,11 +86,27 @@ RUN apt-get update -qq && \
 COPY --from=build "${BUNDLE_PATH}" "${BUNDLE_PATH}"
 COPY --from=build /rails /rails
 
-# Run and own only the runtime files as a non-root user for security
+
+# Configure ImageMagick policy to allow execution
+RUN sed -i '/<policy domain="executable"/s/none/read|execute/' /etc/ImageMagick-*/policy.xml
+
+# Set minimal permissions
 RUN groupadd --system --gid 1000 rails && \
     useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash && \
-    chown -R rails:rails db log storage tmp
+    mkdir -p /rails/public/images && \
+    chown -R rails:rails /rails /rails/public/images && \
+    chmod -R 750 /rails && \
+    chmod -R 755 /rails/public/images && \
+    chmod u+s /usr/bin/convert && \
+    chmod u+s /usr/bin/magick
+
 USER 1000:1000
+
+# Run and own only the runtime files as a non-root user for security
+#RUN groupadd --system --gid 1000 rails && \
+#    useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash && \
+#    chown -R rails:rails db log storage tmp
+#USER 1000:1000
 
 # Entrypoint prepares the database.
 ENTRYPOINT ["/rails/bin/docker-entrypoint"]

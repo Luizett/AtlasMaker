@@ -124,7 +124,7 @@ const AuthPage = () => {
                     </label>
 
                     <div className="flex justify-center mt-4">
-                        <Button type="violet">Sign In</Button>
+                        <Button type="violet">Sign Up</Button>
                     </div>
                 </form>
             </>

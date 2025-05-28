@@ -63,7 +63,7 @@ const UserPage = () => {
                 <Page title="account">
                     <div className="mt-4 sm:mt-8">
                         <div className="w-[100px] sm:w-[200px] h-[100px] sm:h-[200px] rounded-full bg-timberwolf mx-auto aspect-square overflow-hidden">
-                            <img src={avatar} width={200} height={200} alt="your avatar"
+                            <img src={avatar? avatar : "/icons/user.svg"} width={200} height={200} alt="your avatar"
                                  className="object-fill"
                             />
                         </div>
